@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TBMG_Country_MainCity2 — DarkRP Dedicated Server [sv_cheats 1]</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gmod-green: #4cfe4c;
+      --gmod-orange: #ff8c00;
+      --gmod-red: #ff2020;
+      --gmod-blue: #5599ff;
+      --gmod-bg: #0a0a0a;
+      --source-font: 'Share Tech Mono', monospace;
+      --hdr-bloom: rgba(255,200,100,0.08);
+    }
+
+    body {
+      background: #000;
+      font-family: var(--source-font);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+      user-select: none;
+    }
+
+    /* ===== MAIN CANVAS ===== */
+    #simCanvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    /* ===== HDR BLOOM OVERLAY ===== */
+    #hdrOverlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 50% 30%, rgba(255,210,120,0.13) 0%, transparent 70%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    /* ===== VIGNETTE ===== */
+    #vignette {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+      pointer-events: none;
+    }
+
+    /* ===== DARKRP HUD ===== */
+    #hud {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      pointer-events: none;
+      padding: 10px;
+    }
+
+    #hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .hud-panel {
+      background: rgba(0,0,0,0.72);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 2px;
+      padding: 6px 12px;
+      backdrop-filter: blur(2px);
+    }
+
+    #hud-job {
+      color: var(--gmod-orange);
+      font-size: 13px;
+      text-shadow: 0 0 8px var(--gmod-orange);
+    }
+
+    #hud-money {
+      color: var(--gmod-green);
+      font-size: 15px;
+      font-weight: bold;
+      text-shadow: 0 0 10px var(--gmod-green);
+    }
+
+    #hud-health {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .bar-container {
+      width: 120px;
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    #health-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff2020, #ff6060);
+      box-shadow: 0 0 6px #ff2020;
+      transition: width 0.15s;
+    }
+
+    #armor-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #2060ff, #60a0ff);
+      box-shadow: 0 0 6px #3080ff;
+      transition: width 0.15s;
+    }
+
+    #hud-ammo {
+      color: #ddd;
+      font-size: 20px;
+      text-align: right;
+    }
+
+    #hud-ammo span { color: var(--gmod-orange); font-size: 14px; }
+
+    #hud-weapon {
+      color: #aaa;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    /* ===== TOP HUD ===== */
+    #hud-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 12px;
+      pointer-events: none;
+    }
+
+    #server-info {
+      color: rgba(255,255,255,0.4);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    #player-count-badge {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,140,0,0.4);
+      color: var(--gmod-orange);
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 2px;
+    }
+
+    /* ===== CONSOLE LOG ===== */
+    #console-log {
+      position: absolute;
+      bottom: 90px;
+      left: 10px;
+      width: 480px;
+      max-height: 160px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .console-line {
+      font-size: 11px;
+      line-height: 1.4;
+      opacity: 0;
+      animation: fadeInOut 6s ease forwards;
+    }
+    .console-line.error { color: #ff4040; }
+    .console-line.warn { color: #ffcc00; }
+    .console-line.info { color: #7aff7a; }
+    .console-line.sys { color: #80c0ff; }
+    .console-line.admin { color: #ff80ff; }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(4px); }
+      10% { opacity: 1; transform: translateY(0); }
+      75% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ===== LOADING SCREEN ===== */
+    #loading-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 20px;
+    }
+
+    #loading-screen.hidden { display: none; }
+
+    #loading-logo {
+      font-size: 11px;
+      color: rgba(255,255,255,0.15);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    #loading-title {
+      font-size: 28px;
+      color: #fff;
+      letter-spacing: 2px;
+      text-shadow: 0 0 30px rgba(255,140,0,0.6);
+    }
+
+    #loading-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    #loading-bar-outer {
+      width: 320px;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #loading-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #ff8c00, #ffcc00);
+      box-shadow: 0 0 8px #ff8c00;
+      transition: width 0.3s;
+    }
+
+    #loading-text {
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      letter-spacing: 1px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0.2; } }
+
+    #loading-map-thumb {
+      width: 180px;
+      height: 100px;
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-thumb-stripe {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: rgba(255,140,0,0.2);
+    }
+
+    /* ===== ADMIN PANEL ===== */
+    #admin-panel {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 540px;
+      background: rgba(8,8,12,0.97);
+      border: 1px solid rgba(255,80,255,0.4);
+      border-radius: 3px;
+      z-index: 500;
+      display: none;
+      box-shadow: 0 0 40px rgba(200,0,255,0.3), 0 0 80px rgba(200,0,255,0.1);
+    }
+
+    #admin-panel.visible { display: block; }
+
+    #admin-panel-header {
+      background: linear-gradient(90deg, rgba(180,0,255,0.3), rgba(60,0,100,0.3));
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,80,255,0.3);
+    }
+
+    #admin-panel-header span {
+      color: #cc80ff;
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+
+    #admin-panel-close {
+      color: #ff4040;
+      cursor: pointer;
+      font-size: 14px;
+      pointer-events: all;
+    }
+
+    #admin-panel-body {
+      padding: 14px;
+    }
+
+    .admin-section-title {
+      color: #cc80ff;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255,80,255,0.2);
+      padding-bottom: 4px;
+    }
+
+    .admin-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .admin-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #ccc;
+      font-family: var(--source-font);
+      font-size: 11px;
+      padding: 5px 12px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      pointer-events: all;
+    }
+
+    .admin-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,140,0,0.5);
+      color: var(--gmod-orange);
+      text-shadow: 0 0 8px var(--gmod-orange);
+    }
+
+    .admin-btn.danger {
+      border-color: rgba(255,40,40,0.4);
+      color: #ff8080;
+    }
+    .admin-btn.danger:hover {
+      background: rgba(255,0,0,0.15);
+      border-color: #ff4040;
+      color: #ff4040;
+      text-shadow: 0 0 8px #ff4040;
+    }
+
+    .admin-btn.superuser {
+      border-color: rgba(255,80,255,0.5);
+      color: #ee80ff;
+    }
+
+    #noclip-indicator {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #cc80ff;
+      font-size: 11px;
+      text-shadow: 0 0 10px #cc80ff;
+      pointer-events: none;
+      display: none;
+    }
+
+    #noclip-indicator.active { display: block; animation: pulse 1.5s ease infinite; }
+
+    @keyframes pulse { 50% { opacity: 0.4; } }
+
+    /* ===== ENTITY SPAWN COUNTER ===== */
+    #entity-counter {
+      position: absolute;
+      top: 65px;
+      right: 12px;
+      color: rgba(255,255,255,0.3);
+      font-size: 10px;
+      pointer-events: none;
+      text-align: right;
+    }
+
+    /* ===== CRASH OVERLAY ===== */
+    #crash-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    #crash-overlay.visible { display: flex; }
+
+    #crash-title {
+      color: #ff2020;
+      font-size: 18px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px #ff2020;
+    }
+
+    #crash-detail {
+      color: rgba(255,255,255,0.5);
+      font-size: 10px;
+      line-height: 2;
+      text-align: center;
+    }
+
+    #crash-reboot-bar {
+      width: 200px;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    #crash-reboot-fill {
+      height: 100%;
+      background: #ff2020;
+      width: 0%;
+      box-shadow: 0 0 6px #ff2020;
+    }
+
+    /* ===== MINIMAP ===== */
+    #minimap-container {
+      position: absolute;
+      top: 45px;
+      right: 12px;
+      pointer-events: none;
+    }
+
+    #minimapCanvas {
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 2px;
+      display: block;
+    }
+
+    #minimap-label {
+      color: rgba(255,255,255,0.3);
+      font-size: 9px;
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    /* ===== COMBINE BALL TRAIL ===== */
+    .combine-ball {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: radial-gradient(circle, #ffffcc, #ffaa00, transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 12px #ffaa00, 0 0 4px #ffeeaa;
+    }
+
+    /* ===== KEY HINTS ===== */
+    #key-hints {
+      position: absolute;
+      bottom: 90px;
+      right: 12px;
+      color: rgba(255,255,255,0.25);
+      font-size: 9px;
+      text-align: right;
+      line-height: 1.8;
+      pointer-events: none;
+    }
+
+    /* ===== STATIC RADIO CLICK VISUAL ===== */
+    #radio-static {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(100,200,100,0.7);
+      font-size: 36px;
+      pointer-events: none;
+      display: none;
+      text-shadow: 0 0 20px #00ff00;
+    }
+
+    #faction-legend {
+      position: absolute;
+      top: 200px;
+      right: 12px;
+      pointer-events: none;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 4px;
+    }
+
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ===== LORE PANEL ===== */
+    #lore-panel {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      background: rgba(10,10,15,0.95);
+      border: 1px solid rgba(255,140,0,0.6);
+      border-radius: 4px;
+      padding: 15px;
+      color: #fff;
+      font-size: 13px;
+      box-shadow: 0 0 20px rgba(255,140,0,0.2);
+      display: none;
+      z-index: 1000;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #lore-panel h2 {
+      color: var(--gmod-orange);
+      margin-bottom: 10px;
+      font-size: 16px;
+      border-bottom: 1px solid rgba(255,140,0,0.3);
+      padding-bottom: 5px;
+    }
+    #lore-panel h3 {
+      color: var(--gmod-blue);
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    #lore-panel ul {
+      list-style: none;
+      padding-left: 10px;
+    }
+    #lore-panel li {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    #lore-panel li::before {
+      content: ">> ";
+      color: var(--gmod-green);
+    }
+    #lore-panel-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      cursor: pointer;
+      color: var(--gmod-red);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div id="loading-logo">source engine — dedicated server build 2004</div>
+  <div id="loading-title">TBMG_Country_MainCity2</div>
+  <div id="loading-sub">darkrp | sv_cheats 1 | instability mode: MAXIMUM</div>
+  <div id="loading-map-thumb">
+    <canvas id="mapThumbCanvas" width="180" height="100"></canvas>
+  </div>
+  <div id="loading-bar-outer">
+    <div id="loading-bar-inner" style="width:0%"></div>
+  </div>
+  <div id="loading-text">LOADING...</div>
+</div>
+
+<!-- CRASH OVERLAY -->
+<div id="crash-overlay">
+  <div id="crash-title">⚠ SERVER CRASH DETECTED ⚠</div>
+  <div id="crash-detail" id="crash-detail-text">
+    Segmentation fault — too many entities spawned<br />
+    Heap overflow at engine/prop_physics.cpp:1337<br />
+    Server will reboot automatically...
+  </div>
+  <div id="crash-reboot-bar"><div id="crash-reboot-fill"></div></div>
+</div>
+
+<!-- SIMULATION CANVAS -->
+<canvas id="simCanvas"></canvas>
+
+<!-- HDR BLOOM -->
+<div id="hdrOverlay"></div>
+<div id="vignette"></div>
+
+<!-- RADIO STATIC -->
+<div id="radio-static">📻</div>
+
+<!-- HUD TOP -->
+<div id="hud-top">
+  <div id="server-info">
+    <div>TBMG_Country_MainCity2 [DarkRP v2.4.3]</div>
+    <div>sv_cheats 1 | build 4729 | tickrate 33</div>
+    <div id="sim-time-display">sim_time: 0.000</div>
+  </div>
+  <div id="player-count-badge">👥 <span id="player-count">64</span>/64</div>
+</div>
+
+<!-- MINIMAP -->
+<div id="minimap-container">
+  <canvas id="minimapCanvas" width="120" height="90"></canvas>
+  <div id="minimap-label">TBMG_MainCity2 — overview</div>
+</div>
+
+<!-- ENTITY COUNTER -->
+<div id="entity-counter">
+  Entities: <span id="entity-count">0</span><br />
+  Pink Chargers: <span id="charger-count">0</span><br />
+  Anime Pillows: <span id="pillow-count">0</span>
+</div>
+
+<!-- FACTION LEGEND -->
+<div id="faction-legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#88aaff"></div>Civilian</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4444ff"></div>MCPD</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8800ff"></div>ECPU</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff4400"></div>RPG Gang</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff00ff"></div>President</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffee00"></div>⚡ Combine Ball</div>
+</div>
+
+<!-- NOCLIP INDICATOR -->
+<div id="noclip-indicator">[ NOCLIP ACTIVE — sv_cheats 1 ]</div>
+
+<!-- CONSOLE LOG -->
+<div id="console-log"></div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div id="admin-panel-header">
+    <span>⚙ PRESIDENT MICHAEL — EXECUTIVE TERMINAL [sv_cheats 1]</span>
+    <span id="admin-panel-close">✕</span>
+  </div>
+  <div id="admin-panel-body">
+    <div class="admin-section-title">Entity Spawning</div>
+    <div class="admin-row">
+      <button class="admin-btn" onclick="adminSpawn('civilian')">Spawn Civilian</button>
+      <button class="admin-btn" onclick="adminSpawn('mcpd')">Spawn MCPD</button>
+      <button class="admin-btn" onclick="adminSpawn('ecpu')">Spawn ECPU</button>
+      <button class="admin-btn" onclick="adminSpawn('rpg')">Spawn RPG Ganger</button>
+      <button class="admin-btn superuser" onclick="adminSpawn('charger')">Spawn Pink Charger</button>
+      <button class="admin-btn superuser" onclick="adminSpawn('pillow')">Spawn Anime Pillow</button>
+    </div>
+    <div class="admin-section-title">Executive Privileges</div>
+    <div class="admin-row">
+      <button class="admin-btn superuser" onclick="toggleNoclip()">Toggle Noclip</button>
+      <button class="admin-btn" onclick="adminSpawn('combine_ball_burst')">Fire Combine Ball Burst</button>
+      <button class="admin-btn danger" onclick="massSpawnCrash()">SPAWN 55 CHARGERS</button>
+    </div>
+    <div class="admin-section-title">World Control</div>
+    <div class="admin-row">
+      <button class="admin-btn" onclick="triggerLoadingScreen('Maine HQ')">Teleport → Maine HQ</button>
+      <button class="admin-btn danger" onclick="clearAllEntities()">ent_remove_all</button>
+      <button class="admin-btn danger" onclick="triggerCrash('Manual server crash (exec override)')">kill server</button>
+    </div>
+    <div class="admin-section-title">Dark Leader Override</div>
+    <div class="admin-row">
+      <button class="admin-btn superuser" onclick="darkLeaderOverride()">Invoke Dark Leader Authority</button>
+      <button class="admin-btn" onclick="toggleLorePanel()" style="margin-left: 8px;">Access Lore Database</button>
+    </div>
+  </div>
+</div>
+
+<!-- LORE PANEL -->
+<div id="lore-panel">
+  <div id="lore-panel-close" onclick="toggleLorePanel()">✕</div>
+  <h2>TBMG COUNTRY — CLASSIFIED LORE DATABASE</h2>
+  
+  <h3>1. General Overview of TBMG Country</h3>
+  <ul>
+    <li>TBMG Country is defined by extreme chaos, radical freedom, and harsh rules. No one actually knows what "TBMG" stands for.</li>
+    <li>The country is split in two. The main city is a lawless disaster area with explosions every day. The countryside is very peaceful and safe.</li>
+    <li>Constant explosions changed the environment, creating glowing plants and adapted animals like "Cinder Foxes". Eventually the nature died and the land became a barren wasteland.</li>
+  </ul>
+
+  <h3>2. Leadership and Government</h3>
+  <ul>
+    <li>The government is completely corrupt. A small elite group passes power down to their families. A president is only allowed to rule for 50 years.</li>
+    <li>President Tim rules through paranoia and erratic impulses but brought back radical freedoms, like using Photoshop and letting people gather in groups.</li>
+    <li>President Michael was incredibly brutal. It was illegal to speak badly about the government, and punishments included draining people's joyful memories.</li>
+    <li>The true power belongs to the "Dark Leader" or "The Vampire." He never takes an oath, his age makes no sense, and he never raises his voice. People write laws just to avoid upsetting him.</li>
+  </ul>
+
+  <h3>3. Law Enforcement and the Police</h3>
+  <ul>
+    <li>The Main City Police Department (MCPD) operates like a criminal syndicate according to the FBI.</li>
+    <li>MCPD officers shoot people instantly instead of arresting them. Just bumping into an officer gets you shot.</li>
+    <li>Their ranking system is entirely based on kill count. The MCPD kills about 2 million people every single day.</li>
+    <li>Elite Combine Protection Units (ECPU) outrank all regular officers. They wear opaque helmets, give no warnings, and never hesitate to shoot.</li>
+  </ul>
+
+  <h3>4. Bizarre Laws and Culture</h3>
+  <ul>
+    <li>Jaywalking is a terrible idea. The government encourages drivers to run over jaywalkers on purpose.</li>
+    <li>Traffic lights are just decorations. Nobody stops for them, but magically, there are zero crashes.</li>
+    <li>It is secretly illegal to shoot a bullet inside a church. Doing this gives you a 736,000-star wanted level.</li>
+    <li>Citizens are allowed to print their own money. But if they get caught doing it, they instantly get a seven-star wanted level.</li>
+    <li>The country hosts absurd events like the "Rubber Ducky Battle" and "Pink Day" where 45% of the population buys mandatory pink paint.</li>
+    <li>A government survival guide tells citizens they must carry 4 Billion Mountain Dew bottles just to look cool.</li>
+  </ul>
+
+  <h3>5. Multiverse Conquest and Technology</h3>
+  <ul>
+    <li>TBMG Country claims the legal right to invade and destroy any universe based on the "Universal Collapse Treaty 9982-A".</li>
+    <li>The Combine Empire made TBMG its primary force for conquering other universes.</li>
+    <li>Unable to manufacture bullets, TBMG invented weapons firing "Combine Energy Balls". Normal bullets are obsolete.</li>
+    <li>TBMG formed "TBMG NATO", an internet-driven coalition that mocks global power structures.</li>
+  </ul>
+</div>
+
+<!-- HUD BOTTOM -->
+<div id="hud">
+  <div id="hud-bottom">
+    <div class="hud-panel" id="hud-job">
+      JOB: <span id="job-name">President Michael</span>
+    </div>
+    <div class="hud-panel" id="hud-health">
+      <div>
+        <div style="color:#ff6060;font-size:9px;margin-bottom:2px;">HEALTH</div>
+        <div class="bar-container"><div id="health-bar" style="width:100%"></div></div>
+      </div>
+      <div style="font-size:13px;color:#ff6060" id="hp-num">100</div>
+      <div style="width:1px;background:rgba(255,255,255,0.1);height:24px;margin:0 4px"></div>
+      <div>
+        <div style="color:#6090ff;font-size:9px;margin-bottom:2px;">ARMOR</div>
+        <div class="bar-container"><div id="armor-bar" style="width:100%"></div></div>
+      </div>
+      <div style="font-size:13px;color:#6090ff" id="armor-num">100</div>
+    </div>
+    <div class="hud-panel" id="hud-money">
+      💵 $<span id="money-amount">250,000</span>
+    </div>
+    <div class="hud-panel">
+      <div id="hud-weapon">prop_combine_ball [ACTIVE AMMO SHIFT]</div>
+      <div id="hud-ammo">∞ / <span>∞</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- KEY HINTS -->
+<div id="key-hints">
+  [F1] Admin Panel<br />
+  [F2] Trigger Load Zone<br />
+  [Click] Spawn Entity / Fire<br />
+  [R] Randomize Physics<br />
+  [C] Clear All<br />
+</div>
+
+<script>
+// ============================================================
+//  TBMG_Country_MainCity2 — Simulation Engine
+//  Source: DarkRP Dedicated Server Emulator v1.0
+//  Build: 2026-04-14 | instability: MAXIMUM
+// ============================================================
+
+const simCanvas = document.getElementById('simCanvas');
+const ctx = simCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimapCanvas');
+const mmCtx = minimapCanvas.getContext('2d');
+
+function toggleLorePanel() {
+  const panel = document.getElementById('lore-panel');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+  } else {
+    panel.style.display = 'block';
+  }
+}
+
+// ---- AUDIO ENGINE ----
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, vol, detune = 0) {
+  try {
+    const ac = getAudioCtx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = type; osc.frequency.value = freq; osc.detune.value = detune;
+    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.start(); osc.stop(ac.currentTime + duration);
+  } catch(e) {}
+}
+
+function playMetalClang() {
+  try {
+    const ac = getAudioCtx();
+    const buf = ac.createBuffer(1, ac.sampleRate * 0.4, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ac.sampleRate * 0.08));
+    }
+    const src = ac.createBufferSource();
+    const gain = ac.createGain();
+    const filter = ac.createBiquadFilter();
+    filter.type = 'highpass'; filter.frequency.value = 800;
+    src.buffer = buf;
+    src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+    gain.gain.value = 0.4;
+    src.start();
+  } catch(e) {}
+}
+
+function playStaticClick() {
+  try {
+    const ac = getAudioCtx();
+    const buf = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+    const src = ac.createBufferSource();
+    const gain = ac.createGain();
+    src.buffer = buf;
+    src.connect(gain); gain.connect(ac.destination);
+    gain.gain.value = 0.8;
+    src.start();
+  } catch(e) {}
+}
+
+function playExplosion() {
+  try {
+    const ac = getAudioCtx();
+    const buf = ac.createBuffer(1, ac.sampleRate * 0.8, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ac.sampleRate * 0.15));
+    }
+    const src = ac.createBufferSource();
+    const gain = ac.createGain();
+    const filter = ac.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 500;
+    src.buffer = buf;
+    src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+    gain.gain.value = 0.7;
+    src.start();
+  } catch(e) {}
+}
+
+function playCombineBallHit() {
+  playTone(800, 'sawtooth', 0.15, 0.3);
+  playTone(400, 'square', 0.1, 0.2, 200);
+}
+
+// ---- WORLD DIMENSIONS ----
+let W, H;
+function resize() {
+  W = simCanvas.width = window.innerWidth;
+  H = simCanvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ---- SIMULATION STATE ----
+let simTime = 0;
+let paused = false;
+let noclipActive = false;
+let playerMoney = 250000;
+let playerHealth = 100;
+let playerArmor = 100;
+const entities = [];
+const particles = [];
+const projectiles = [];
+const explosions = [];
+let pinkChargerCount = 0;
+let animePillowCount = 0;
+const MAX_ENTITIES = 200;
+
+// ---- PINK/BLACK CHECKERBOARD (texture fail) ----
+function drawCheckerboard(ctx, x, y, w, h) {
+  const sz = 8;
+  for (let cx = 0; cx < w; cx += sz) {
+    for (let cy = 0; cy < h; cy += sz) {
+      const r = Math.floor(cx / sz) + Math.floor(cy / sz);
+      ctx.fillStyle = (r % 2 === 0) ? '#ff00ff' : '#000000';
+      ctx.fillRect(x + cx, y + cy, Math.min(sz, w - cx), Math.min(sz, h - cy));
+    }
+  }
+}
+
+// ---- ERROR MESH ----
+function drawErrorMesh(ctx, x, y) {
+  ctx.save();
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#cc0000';
+  ctx.font = 'bold 20px Share Tech Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('ERROR', x, y + 6);
+  ctx.restore();
+}
+
+// ---- WORLD MAP GEOMETRY ----
+const MAP_ZONES = [
+  { id: 'plaza', x: 150, y: 100, w: 300, h: 200, label: 'City Plaza', color: '#2a2a35' },
+  { id: 'hq',    x: 600, y: 80,  w: 220, h: 160, label: 'ECPU HQ / President Office', color: '#1a1a2a' },
+  { id: 'slums', x: 100, y: 380, w: 260, h: 180, label: 'Slums District', color: '#252015' },
+  { id: 'depot', x: 480, y: 340, w: 200, h: 160, label: 'RPG Spawn Depot', color: '#201515' },
+  { id: 'mcpd',  x: 750, y: 320, w: 150, h: 120, label: 'MCPD Station', color: '#151825' },
+];
+
+const ROADS = [
+  { x1: 150, y1: 200, x2: 600, y2: 200 },
+  { x1: 460, y1: 100, x2: 460, y2: 400 },
+  { x1: 100, y1: 340, x2: 960, y2: 340 },
+  { x1: 680, y1: 80,  x2: 680, y2: 450 },
+];
+
+function drawWorld(ctx) {
+  // Sky box fill
+  ctx.fillStyle = '#0d0d14';
+  ctx.fillRect(0, 0, W, H);
+
+  // Skybox border (low-res hatching)
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < W; i += 24) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+  }
+  for (let i = 0; i < H; i += 24) {
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
+  }
+
+  // Roads
+  ctx.strokeStyle = '#3a3a3a';
+  ctx.lineWidth = 28;
+  ctx.lineCap = 'square';
+  ROADS.forEach(r => {
+    ctx.beginPath(); ctx.moveTo(r.x1, r.y1); ctx.lineTo(r.x2, r.y2); ctx.stroke();
+  });
+
+  // Road markings
+  ctx.strokeStyle = 'rgba(255,220,0,0.3)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([20, 15]);
+  ROADS.forEach(r => {
+    ctx.beginPath(); ctx.moveTo(r.x1, r.y1); ctx.lineTo(r.x2, r.y2); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // Map zones
+  MAP_ZONES.forEach(z => {
+    ctx.fillStyle = z.color;
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+
+    // Zone label
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(z.label, z.x + 5, z.y + 13);
+  });
+
+  // HDR flicker — faint warm light pools at plaza center
+  const pgrd = ctx.createRadialGradient(300, 200, 0, 300, 200, 180);
+  pgrd.addColorStop(0, 'rgba(255,200,100,0.06)');
+  pgrd.addColorStop(1, 'transparent');
+  ctx.fillStyle = pgrd;
+  ctx.fillRect(0, 0, W, H);
+
+  // HQ floodlight
+  const hqgrd = ctx.createRadialGradient(710, 160, 0, 710, 160, 120);
+  hqgrd.addColorStop(0, 'rgba(80,100,255,0.1)');
+  hqgrd.addColorStop(1, 'transparent');
+  ctx.fillStyle = hqgrd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ---- ENTITY BASE CLASS ----
+let entityIdCounter = 0;
+class Entity {
+  constructor(x, y, type) {
+    this.id = entityIdCounter++;
+    this.x = x; this.y = y;
+    this.vx = 0; this.vy = 0;
+    this.type = type;
+    this.alive = true;
+    this.radius = 8;
+    this.textureFailure = Math.random() < 0.05;
+    this.modelMissing = Math.random() < 0.02;
+    this.health = 100;
+    this.maxHealth = 100;
+    this.age = 0;
+    this.lastCollision = 0;
+  }
+
+  update(dt) {
+    this.age += dt;
+    // friction
+    this.vx *= 0.88;
+    this.vy *= 0.88;
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // World boundary bounce
+    const margin = 20;
+    if (this.x < margin) { this.x = margin; this.vx = Math.abs(this.vx) + 1; playMetalClang(); }
+    if (this.x > W - margin) { this.x = W - margin; this.vx = -(Math.abs(this.vx) + 1); playMetalClang(); }
+    if (this.y < margin) { this.y = margin; this.vy = Math.abs(this.vy) + 1; }
+    if (this.y > H - 100) { this.y = H - 100; this.vy = -(Math.abs(this.vy) + 1); }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    if (this.modelMissing) {
+      drawErrorMesh(ctx, 0, 0);
+    } else if (this.textureFailure) {
+      ctx.save();
+      drawCheckerboard(ctx, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
+      ctx.restore();
+    } else {
+      this.drawSelf(ctx);
+    }
+
+    // Health bar
+    if (this.health < this.maxHealth) {
+      const bw = 24, bh = 3;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-bw/2, -this.radius - 7, bw, bh);
+      ctx.fillStyle = this.health > 50 ? '#44ff44' : '#ff4444';
+      ctx.fillRect(-bw/2, -this.radius - 7, bw * (this.health / this.maxHealth), bh);
+    }
+
+    ctx.restore();
+  }
+
+  drawSelf(ctx) {
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  }
+
+  takeDamage(amt) {
+    this.health -= amt;
+    spawnDamageParticles(this.x, this.y, 6);
+    if (this.health <= 0) this.die();
+  }
+
+  die() {
+    this.alive = false;
+    spawnExplosionEffect(this.x, this.y, this.type === 'rpg' ? 50 : 20);
+    if (this.type === 'rpg') {
+      playExplosion();
+      // Self-damage splash — friendly fire
+      entities.forEach(e => {
+        if (!e.alive) return;
+        const d = dist(e.x, e.y, this.x, this.y);
+        if (d < 80) e.takeDamage(30);
+      });
+    }
+  }
+}
+
+// ---- CIVILIAN ----
+const IDLE_ANIMS = ['standing', 'looking_around', 'phone_call', 'leaning', 'sitting'];
+class Civilian extends Entity {
+  constructor(x, y) {
+    super(x, y, 'civilian');
+    this.radius = 7;
+    this.idleAnim = IDLE_ANIMS[Math.floor(Math.random() * IDLE_ANIMS.length)];
+    this.idleTimer = 0;
+    this.idleInterval = 3 + Math.random() * 4;
+    this.wanderTimer = 0;
+    this.color = `hsl(${200 + Math.random()*60}, 40%, 65%)`;
+  }
+
+  update(dt) {
+    super.update(dt);
+    this.idleTimer += dt;
+    this.wanderTimer += dt;
+
+    // Aimless wandering
+    if (this.wanderTimer > 2 + Math.random() * 3) {
+      this.wanderTimer = 0;
+      this.vx += (Math.random() - 0.5) * 1.5;
+      this.vy += (Math.random() - 0.5) * 1.5;
+    }
+
+    // Cycle idle animation
+    if (this.idleTimer > this.idleInterval) {
+      this.idleTimer = 0;
+      this.idleAnim = IDLE_ANIMS[Math.floor(Math.random() * IDLE_ANIMS.length)];
+    }
+
+    // Zero tactical awareness — ignore everything (do nothing reactive)
+  }
+
+  drawSelf(ctx) {
+    // Body
+    ctx.beginPath();
+    ctx.arc(0, 2, 5, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    // Head
+    ctx.beginPath();
+    ctx.arc(0, -5, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f5c8a0';
+    ctx.fill();
+    // Idle anim indicator
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.idleAnim.split('_')[0], 0, -12);
+  }
+}
+
+// ---- MCPD ----
+class MCPD extends Entity {
+  constructor(x, y) {
+    super(x, y, 'mcpd');
+    this.radius = 8;
+    this.health = 150; this.maxHealth = 150;
+    this.lineDir = Math.random() < 0.5 ? 1 : -1;
+    this.stuck = false; this.stuckTimer = 0;
+    this.shootTimer = 0;
+    this.shootInterval = 2.5;
+    this.target = null;
+  }
+
+  update(dt) {
+    this.age += dt;
+    this.shootTimer += dt;
+
+    if (this.stuck) {
+      this.stuckTimer += dt;
+      if (this.stuckTimer > 3) { this.stuck = false; this.stuckTimer = 0; }
+    } else {
+      // Rigid line patrol
+      this.vx += this.lineDir * 0.4;
+      if (Math.abs(this.vx) > 2.5) this.vx = this.lineDir * 2.5;
+      this.vy *= 0.9;
+
+      // 10% chance to get stuck each collision
+      if (Math.random() < 0.001) {
+        this.stuck = true;
+        this.vx = 0; this.vy = 0;
+        addConsoleLog('warn', `MCPD unit #${this.id} stuck on prop door`);
+      }
+
+      // Reverse at walls
+      if (this.x < 80 || this.x > W - 80) this.lineDir *= -1;
+    }
+
+    super.update(dt);
+
+    // Shoot combine balls at nearest hostile
+    if (this.shootTimer > this.shootInterval) {
+      this.shootTimer = 0;
+      const t = findNearestEnemy(this.x, this.y, ['rpg', 'civilian']);
+      if (t && dist(this.x, this.y, t.x, t.y) < 250) {
+        fireCombineBall(this.x, this.y, t.x, t.y, 'mcpd');
+      }
+    }
+  }
+
+  drawSelf(ctx) {
+    ctx.fillStyle = this.stuck ? '#444477' : '#4455cc';
+    ctx.beginPath();
+    ctx.rect(-8, -9, 16, 18);
+    ctx.fill();
+    // Badge
+    ctx.fillStyle = '#aabbff';
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MCPD', 0, 3);
+    // Helmet
+    ctx.fillStyle = '#223366';
+    ctx.beginPath();
+    ctx.arc(0, -9, 6, Math.PI, 0);
+    ctx.fill();
+    if (this.stuck) {
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = '9px monospace';
+      ctx.fillText('STUCK', 0, -16);
+    }
+  }
+}
+
+// ---- ECPU ----
+class ECPU extends Entity {
+  constructor(x, y) {
+    super(x, y, 'ecpu');
+    this.radius = 10;
+    this.health = 500; this.maxHealth = 500;
+    this.radioTimer = 0;
+    this.radioInterval = 1.5 + Math.random();
+    this.patrolAngle = 0;
+    this.shootTimer = 0;
+  }
+
+  update(dt) {
+    this.age += dt;
+    this.radioTimer += dt;
+    this.shootTimer += dt;
+
+    // ECPU Authority: override MCPD targeting
+    this.patrolAngle += dt * 0.4;
+    const cx = 710, cy = 160; // HQ center
+    const pr = 80;
+    const tx = cx + Math.cos(this.patrolAngle) * pr;
+    const ty = cy + Math.sin(this.patrolAngle) * pr;
+    const dx = tx - this.x, dy = ty - this.y;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d > 5) {
+      this.vx += (dx / d) * 0.5;
+      this.vy += (dy / d) * 0.5;
+    }
+
+    super.update(dt);
+
+    // Radio static emission (no text, no audio voice — only clicks)
+    if (this.radioTimer > this.radioInterval) {
+      this.radioTimer = 0;
+      this.radioInterval = 0.8 + Math.random() * 2;
+      playStaticClick();
+      showRadioStatic();
+    }
+
+    // Fire combine balls at RPG gangers
+    if (this.shootTimer > 1.8) {
+      this.shootTimer = 0;
+      const t = findNearestEnemy(this.x, this.y, ['rpg']);
+      if (t && dist(this.x, this.y, t.x, t.y) < 350) {
+        fireCombineBall(this.x, this.y, t.x, t.y, 'ecpu');
+      }
+    }
+  }
+
+  drawSelf(ctx) {
+    ctx.save();
+    // Armored body
+    ctx.fillStyle = '#330066';
+    ctx.beginPath();
+    ctx.rect(-10, -12, 20, 22);
+    ctx.fill();
+    // Visor
+    ctx.fillStyle = '#6600cc';
+    ctx.beginPath();
+    ctx.rect(-7, -10, 14, 5);
+    ctx.fill();
+    // Glow aura
+    ctx.shadowColor = '#8800ff';
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = '#9922ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(-10, -12, 20, 22);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#cc88ff';
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('ECPU', 0, 16);
+  }
+}
+
+// ---- RPG GANGER ----
+class RPGGanger extends Entity {
+  constructor(x, y) {
+    super(x, y, 'rpg');
+    this.radius = 8;
+    this.health = 80; this.maxHealth = 80;
+    this.shootTimer = 0;
+    this.shootInterval = 1 + Math.random() * 2;
+    this.moveTimer = 0;
+  }
+
+  update(dt) {
+    this.age += dt;
+    this.shootTimer += dt;
+    this.moveTimer += dt;
+
+    // Zero self-preservation — random walk toward anything
+    if (this.moveTimer > 0.8) {
+      this.moveTimer = 0;
+      this.vx += (Math.random() - 0.5) * 4;
+      this.vy += (Math.random() - 0.5) * 4;
+    }
+
+    super.update(dt);
+
+    // Fire at nearest entity with zero safe-distance check
+    if (this.shootTimer > this.shootInterval) {
+      this.shootTimer = 0;
+      // Find ANY nearby entity (including friendlies) — zero self-preservation
+      const t = findNearestEnemy(this.x, this.y, ['civilian', 'mcpd', 'ecpu', 'rpg']);
+      if (t) {
+        const d = dist(this.x, this.y, t.x, t.y);
+        fireRPG(this.x, this.y, t.x, t.y, this);
+        // Self-damage if too close
+        if (d < 80) {
+          this.takeDamage(25);
+          addConsoleLog('warn', `RPG Ganger #${this.id} inflicted self-damage (range: ${d.toFixed(0)}u)`);
+        }
+      }
+    }
+  }
+
+  drawSelf(ctx) {
+    ctx.fillStyle = '#cc3300';
+    ctx.beginPath();
+    ctx.arc(0, 2, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // Bandana
+    ctx.fillStyle = '#ff4400';
+    ctx.beginPath();
+    ctx.arc(0, -4, 5, Math.PI, 0);
+    ctx.fill();
+    // RPG icon
+    ctx.fillStyle = '#ffaa00';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('💥', 0, 3);
+  }
+}
+
+// ---- PROP ENTITY (Pink Dodge Charger / Anime Pillow) ----
+class PropEntity extends Entity {
+  constructor(x, y, propType) {
+    super(x, y, propType);
+    this.propType = propType;
+    this.radius = propType === 'charger' ? 18 : 10;
+    this.angularVel = (Math.random() - 0.5) * 0.2;
+    this.angle = 0;
+    // Instant velocity spike on spawn (physics instability)
+    this.vx = (Math.random() - 0.5) * 15;
+    this.vy = (Math.random() - 0.5) * 15;
+    playMetalClang();
+  }
+
+  update(dt) {
+    this.angle += this.angularVel;
+    super.update(dt);
+    if (this.propType === 'charger') pinkChargerCount = entities.filter(e => e.alive && e.propType === 'charger').length;
+    if (this.propType === 'pillow') animePillowCount = entities.filter(e => e.alive && e.propType === 'pillow').length;
+  }
+
+  drawSelf(ctx) {
+    ctx.save();
+    ctx.rotate(this.angle);
+    if (this.propType === 'charger') {
+      // Pink Dodge Charger (top-down)
+      ctx.fillStyle = '#ff44cc';
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.rect(-18, -9, 36, 18);
+      ctx.fill();
+      // Windows
+      ctx.fillStyle = 'rgba(0,200,255,0.5)';
+      ctx.fillRect(-8, -6, 16, 12);
+      ctx.fillStyle = '#ff88ee';
+      ctx.font = '7px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🚗', 0, 3);
+    } else {
+      // Anime pillow
+      ctx.fillStyle = '#ffaaff';
+      ctx.shadowColor = '#ff88ff';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.rect(-10, -7, 20, 14);
+      ctx.fill();
+      ctx.fillStyle = '#cc44cc';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🛐', 0, 4);
+    }
+    ctx.restore();
+  }
+}
+
+// ---- COMBINE BALL PROJECTILE ----
+class CombineBall {
+  constructor(x, y, tx, ty, owner) {
+    this.x = x; this.y = y;
+    this.owner = owner;
+    const d = dist(x, y, tx, ty);
+    const speed = 8;
+    this.vx = ((tx - x) / d) * speed;
+    this.vy = ((ty - y) / d) * speed;
+    this.alive = true;
+    this.age = 0;
+    this.trail = [];
+    this.bounces = 0;
+    this.maxBounces = 3;
+  }
+
+  update() {
+    this.age += 1/60;
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 12) this.trail.shift();
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Bounce off walls
+    if (this.x < 10 || this.x > W - 10) {
+      this.vx *= -1;
+      this.bounces++;
+      playTone(600, 'sine', 0.08, 0.2);
+    }
+    if (this.y < 10 || this.y > H - 10) {
+      this.vy *= -1;
+      this.bounces++;
+      playTone(600, 'sine', 0.08, 0.2);
+    }
+
+    if (this.bounces > this.maxBounces || this.age > 6) this.alive = false;
+
+    // Hit detection
+    entities.forEach(e => {
+      if (!e.alive) return;
+      if (dist(this.x, this.y, e.x, e.y) < e.radius + 5) {
+        // Vaporize on contact
+        e.takeDamage(9999);
+        spawnExplosionEffect(e.x, e.y, 35);
+        playCombineBallHit();
+        this.alive = false;
+        addConsoleLog('sys', `[AMMO SHIFT] prop_combine_ball vaporized entity #${e.id} (${e.type})`);
+      }
+    });
+  }
+
+  draw(ctx) {
+    // Trail
+    this.trail.forEach((pt, i) => {
+      const a = i / this.trail.length;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3 * a, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,180,0,${a * 0.5})`;
+      ctx.fill();
+    });
+
+    // Ball
+    ctx.save();
+    ctx.shadowColor = '#ffcc00';
+    ctx.shadowBlur = 20;
+    const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, 8);
+    grd.addColorStop(0, '#ffffff');
+    grd.addColorStop(0.4, '#ffee88');
+    grd.addColorStop(1, 'rgba(255,140,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ---- RPG ROCKET ----
+class RPGRocket {
+  constructor(x, y, tx, ty, owner) {
+    this.x = x; this.y = y;
+    this.owner = owner;
+    const d = dist(x, y, tx, ty) || 1;
+    const speed = 5 + Math.random() * 3;
+    this.vx = ((tx - x) / d) * speed;
+    this.vy = ((ty - y) / d) * speed;
+    this.alive = true;
+    this.age = 0;
+    this.trail = [];
+  }
+
+  update() {
+    this.age += 1/60;
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 20) this.trail.shift();
+    this.x += this.vx;
+    this.y += this.vy;
+
+    if (this.x < 0 || this.x > W || this.y < 0 || this.y > H || this.age > 4) {
+      this.detonate();
+      return;
+    }
+
+    entities.forEach(e => {
+      if (!e.alive) return;
+      if (dist(this.x, this.y, e.x, e.y) < e.radius + 8) {
+        this.detonate();
+      }
+    });
+  }
+
+  detonate() {
+    if (!this.alive) return;
+    this.alive = false;
+    playExplosion();
+    spawnExplosionEffect(this.x, this.y, 60);
+    // Splash
+    entities.forEach(e => {
+      if (!e.alive) return;
+      const d = dist(e.x, e.y, this.x, this.y);
+      if (d < 90) {
+        e.takeDamage(40 * (1 - d/90));
+        e.vx += ((e.x - this.x) / (d||1)) * 8;
+        e.vy += ((e.y - this.y) / (d||1)) * 8;
+      }
+    });
+    addConsoleLog('warn', `[RPG] Detonation at (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+  }
+
+  draw(ctx) {
+    this.trail.forEach((pt, i) => {
+      const a = i / this.trail.length;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 4 * a, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,80,0,${a * 0.6})`;
+      ctx.fill();
+    });
+    ctx.save();
+    ctx.shadowColor = '#ff4400';
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#ff6600';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ---- PARTICLE SYSTEM ----
+function spawnDamageParticles(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 5,
+      vy: (Math.random() - 0.5) * 5,
+      life: 1,
+      color: `hsl(${Math.random() * 30 + 10}, 100%, 60%)`,
+      size: 2 + Math.random() * 3,
+    });
+  }
+}
+
+function spawnExplosionEffect(x, y, power) {
+  for (let i = 0; i < Math.floor(power * 0.8); i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * (power / 8) + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      color: `hsl(${30 + Math.random()*30}, 100%, ${50 + Math.random()*30}%)`,
+      size: 3 + Math.random() * 5,
+    });
+  }
+  explosions.push({ x, y, r: 0, maxR: power, life: 1 });
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= 0.94; p.vy *= 0.94;
+    p.life -= dt * 1.5;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    const e = explosions[i];
+    e.r += 80 * (1/60);
+    e.life -= (1/60) * 3;
+    if (e.life <= 0 || e.r >= e.maxR) explosions.splice(i, 1);
+  }
+}
+
+function drawParticles(ctx) {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life * 0.9;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+  explosions.forEach(e => {
+    ctx.save();
+    ctx.globalAlpha = e.life * 0.4;
+    ctx.strokeStyle = `rgba(255,150,30,${e.life})`;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#ff8800';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+// ---- PHYSICS COLLISION ----
+function resolveCollisions() {
+  for (let i = 0; i < entities.length; i++) {
+    if (!entities[i].alive) continue;
+    for (let j = i + 1; j < entities.length; j++) {
+      if (!entities[j].alive) continue;
+      const a = entities[i], b = entities[j];
+      const d = dist(a.x, a.y, b.x, b.y);
+      const minDist = a.radius + b.radius;
+
+      if (d < minDist) {
+        // PROP CLIPPING PERMITTED — but trigger velocity spike
+        const now = simTime;
+        if (now - a.lastCollision > 0.5) {
+          a.lastCollision = now;
+          const overlap = minDist - d;
+          const nx = (b.x - a.x) / (d || 1);
+          const ny = (b.y - a.y) / (d || 1);
+          // Violent velocity spikes
+          const spike = 3 + overlap * 0.5;
+          a.vx -= nx * spike; a.vy -= ny * spike;
+          b.vx += nx * spike; b.vy += ny * spike;
+          if (Math.random() < 0.3) playMetalClang();
+        }
+      }
+    }
+  }
+}
+
+// ---- UTILITY FUNCTIONS ----
+function dist(ax, ay, bx, by) {
+  const dx = ax - bx, dy = ay - by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function findNearestEnemy(x, y, types) {
+  let nearest = null, nearestD = Infinity;
+  entities.forEach(e => {
+    if (!e.alive || !types.includes(e.type)) return;
+    const d = dist(x, y, e.x, e.y);
+    if (d < nearestD) { nearestD = d; nearest = e; }
+  });
+  return nearest;
+}
+
+function fireCombineBall(x, y, tx, ty, owner) {
+  projectiles.push(new CombineBall(x, y, tx, ty, owner));
+}
+
+function fireRPG(x, y, tx, ty, owner) {
+  projectiles.push(new RPGRocket(x, y, tx, ty, owner));
+}
+
+// ---- CONSOLE LOG ----
+const consoleLog = document.getElementById('console-log');
+function addConsoleLog(type, msg) {
+  const el = document.createElement('div');
+  el.className = `console-line ${type}`;
+  el.textContent = `[${simTime.toFixed(2)}] ${msg}`;
+  consoleLog.appendChild(el);
+  // Remove after animation
+  setTimeout(() => { el.remove(); }, 6000);
+  // Trim old
+  while (consoleLog.children.length > 8) consoleLog.removeChild(consoleLog.firstChild);
+}
+
+// ---- RADIO STATIC VISUAL ----
+const radioStaticEl = document.getElementById('radio-static');
+function showRadioStatic() {
+  radioStaticEl.style.display = 'block';
+  setTimeout(() => { radioStaticEl.style.display = 'none'; }, 150);
+}
+
+// ---- LOADING SCREEN ----
+const loadingScreen = document.getElementById('loading-screen');
+const loadingBarInner = document.getElementById('loading-bar-inner');
+const loadingText = document.getElementById('loading-text');
+
+function triggerLoadingScreen(zoneName) {
+  loadingScreen.classList.remove('hidden');
+  paused = true;
+  let progress = 0;
+
+  // Loop last 0.5s of audio
+  try {
+    const ac = getAudioCtx();
+    // Simulate looping ambient hum
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 80;
+    g.gain.value = 0.05;
+    osc.connect(g); g.connect(ac.destination);
+    osc.start();
+    setTimeout(() => { osc.stop(); }, 3000);
+  } catch(e) {}
+
+  const loadSteps = [
+    'Initializing world geometry...',
+    `Loading map: ${zoneName}...`,
+    'Precaching models...',
+    'Building physics hulls...',
+    'Spawning NPCs...',
+    'Connecting to server...',
+    'Server ready.',
+  ];
+
+  let step = 0;
+  const interval = setInterval(() => {
+    progress += 100 / loadSteps.length;
+    loadingBarInner.style.width = `${Math.min(progress, 100)}%`;
+    loadingText.textContent = loadSteps[step] || 'LOADING...';
+    step++;
+    if (step >= loadSteps.length) {
+      clearInterval(interval);
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        paused = false;
+        addConsoleLog('info', `Map transition complete → ${zoneName}`);
+      }, 800);
+    }
+  }, 400);
+}
+
+// ---- CRASH SIMULATION ----
+const crashOverlay = document.getElementById('crash-overlay');
+const crashRebootFill = document.getElementById('crash-reboot-fill');
+
+function triggerCrash(reason) {
+  crashOverlay.classList.add('visible');
+  document.getElementById('crash-detail').innerHTML =
+    `Segmentation fault — ${reason}<br />
+    Heap overflow at engine/prop_physics.cpp:1337<br />
+    Connected clients: 64 → 0<br />
+    Server will reboot automatically...`;
+  paused = true;
+  let progress = 0;
+  const reboot = setInterval(() => {
+    progress += 2;
+    crashRebootFill.style.width = `${progress}%`;
+    if (progress >= 100) {
+      clearInterval(reboot);
+      setTimeout(() => {
+        crashOverlay.classList.remove('visible');
+        // Clear all prop entities
+        entities.forEach(e => { if (e.type === 'charger' || e.type === 'pillow') e.alive = false; });
+        pinkChargerCount = 0;
+        animePillowCount = 0;
+        paused = false;
+        addConsoleLog('sys', 'Server reboot complete. All prop entities purged.');
+      }, 500);
+    }
+  }, 50);
+}
+
+// ---- ADMIN FUNCTIONS ----
+function adminSpawn(type) {
+  const x = 100 + Math.random() * (W - 200);
+  const y = 100 + Math.random() * (H - 250);
+
+  if (type === 'civilian') {
+    entities.push(new Civilian(x, y));
+    addConsoleLog('admin', `[PRESIDENT] Spawned Civilian at (${x.toFixed(0)},${y.toFixed(0)})`);
+  } else if (type === 'mcpd') {
+    entities.push(new MCPD(x, y));
+    addConsoleLog('admin', `[PRESIDENT] Spawned MCPD at (${x.toFixed(0)},${y.toFixed(0)})`);
+  } else if (type === 'ecpu') {
+    entities.push(new ECPU(x, y));
+    addConsoleLog('admin', `[PRESIDENT] Spawned ECPU`);
+  } else if (type === 'rpg') {
+    entities.push(new RPGGanger(x, y));
+    addConsoleLog('admin', `[PRESIDENT] Spawned RPG Ganger`);
+  } else if (type === 'charger') {
+    entities.push(new PropEntity(x, y, 'charger'));
+    addConsoleLog('admin', `[PRESIDENT] prop_vehicle_pink_charger spawned — instability ↑`);
+    checkCrashThreshold();
+  } else if (type === 'pillow') {
+    entities.push(new PropEntity(x, y, 'pillow'));
+    addConsoleLog('admin', `[PRESIDENT] prop_anime_pillow spawned`);
+    checkCrashThreshold();
+  } else if (type === 'combine_ball_burst') {
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const tx = x + Math.cos(angle) * 200;
+      const ty = y + Math.sin(angle) * 200;
+      projectiles.push(new CombineBall(x, y, tx, ty, 'admin'));
+    }
+    addConsoleLog('admin', `[PRESIDENT] Fired combine ball burst (8 projectiles) — AMMO SHIFT ACTIVE`);
+  }
+}
+
+function checkCrashThreshold() {
+  const c = entities.filter(e => e.alive && e.propType === 'charger').length;
+  const p = entities.filter(e => e.alive && e.propType === 'pillow').length;
+  if (c + p > 50) {
+    addConsoleLog('error', `[SERVER] PROP LIMIT EXCEEDED (${c+p}) — triggering crash`);
+    setTimeout(() => triggerCrash(`${c} Chargers + ${p} Anime Pillows exceed entity budget`), 500);
+  }
+}
+
+function massSpawnCrash() {
+  for (let i = 0; i < 55; i++) {
+    const x = 100 + Math.random() * (W - 200);
+    const y = 100 + Math.random() * (H - 250);
+    entities.push(new PropEntity(x, y, 'charger'));
+  }
+  addConsoleLog('error', '[PRESIDENT] Spawned 55 Chargers — CRASH IMMINENT');
+  setTimeout(() => triggerCrash('55 pink Dodge Charger entities exceeded engine heap limit'), 1000);
+}
+
+function toggleNoclip() {
+  noclipActive = !noclipActive;
+  const el = document.getElementById('noclip-indicator');
+  el.classList.toggle('active', noclipActive);
+  addConsoleLog('admin', `[PRESIDENT] noclip ${noclipActive ? 'ON' : 'OFF'} (sv_cheats 1)`);
+}
+
+function clearAllEntities() {
+  entities.forEach(e => e.alive = false);
+  addConsoleLog('admin', '[PRESIDENT] ent_remove_all executed — all entities purged');
+}
+
+function darkLeaderOverride() {
+  addConsoleLog('admin', '[DARK LEADER] Authority override invoked — all MCPD units frozen');
+  entities.forEach(e => {
+    if (e.type === 'mcpd') {
+      e.stuck = true;
+      e.stuckTimer = -9999;
+      addConsoleLog('sys', `[ECPU] MCPD #${e.id} overridden by Dark Leader authority`);
+    }
+  });
+}
+
+// ---- HUD UPDATE ----
+function updateHUD() {
+  document.getElementById('sim-time-display').textContent = `sim_time: ${simTime.toFixed(3)}`;
+  document.getElementById('entity-count').textContent = entities.filter(e => e.alive).length;
+  document.getElementById('charger-count').textContent = entities.filter(e => e.alive && e.propType === 'charger').length;
+  document.getElementById('pillow-count').textContent = entities.filter(e => e.alive && e.propType === 'pillow').length;
+}
+
+// ---- MINIMAP ----
+function drawMinimap() {
+  mmCtx.clearRect(0, 0, 120, 90);
+  mmCtx.fillStyle = '#0a0a0f';
+  mmCtx.fillRect(0, 0, 120, 90);
+
+  const scaleX = 120 / W, scaleY = 90 / H;
+
+  MAP_ZONES.forEach(z => {
+    mmCtx.fillStyle = z.color;
+    mmCtx.fillRect(z.x * scaleX, z.y * scaleY, z.w * scaleX, z.h * scaleY);
+  });
+
+  entities.filter(e => e.alive).forEach(e => {
+    const colors = {
+      civilian: '#88aaff', mcpd: '#4455ff', ecpu: '#8800ff',
+      rpg: '#ff4400', charger: '#ff44cc', pillow: '#ffaaff',
+    };
+    mmCtx.fillStyle = colors[e.type] || colors[e.propType] || '#fff';
+    mmCtx.beginPath();
+    mmCtx.arc(e.x * scaleX, e.y * scaleY, 2, 0, Math.PI * 2);
+    mmCtx.fill();
+  });
+
+  if (noclipActive) {
+    mmCtx.strokeStyle = 'rgba(200,80,255,0.5)';
+    mmCtx.lineWidth = 1;
+    mmCtx.strokeRect(0, 0, 120, 90);
+  }
+}
+
+// ---- INPUT HANDLING ----
+document.addEventListener('keydown', e => {
+  if (e.key === 'F1') {
+    e.preventDefault();
+    const panel = document.getElementById('admin-panel');
+    panel.classList.toggle('visible');
+  }
+  if (e.key === 'F2') {
+    e.preventDefault();
+    triggerLoadingScreen('Maine HQ Sector 7');
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    // Randomize physics — inject velocity spikes
+    entities.forEach(e => {
+      if (!e.alive) return;
+      e.vx += (Math.random() - 0.5) * 20;
+      e.vy += (Math.random() - 0.5) * 20;
+    });
+    playMetalClang();
+    addConsoleLog('warn', '[PHYSICS] Global velocity spike injected (prop instability event)');
+  }
+  if (e.key === 'c' || e.key === 'C') {
+    clearAllEntities();
+  }
+});
+
+document.getElementById('admin-panel-close').addEventListener('click', () => {
+  document.getElementById('admin-panel').classList.remove('visible');
+});
+
+simCanvas.addEventListener('click', e => {
+  const rect = simCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  if (noclipActive) {
+    // Noclip: spawn entities at click position
+    addConsoleLog('admin', `[NOCLIP] Teleported to (${x.toFixed(0)}, ${y.toFixed(0)})`);
+    return;
+  }
+
+  // Default click: fire combine ball toward click position
+  fireCombineBall(W / 2, H / 2, x, y, 'player');
+  addConsoleLog('sys', `[AMMO SHIFT] prop_combine_ball fired → (${x.toFixed(0)}, ${y.toFixed(0)})`);
+});
+
+// ---- AUTONOMOUS CONSOLE MESSAGES ----
+const RANDOM_MESSAGES = [
+  ['warn', 'prop_physics entity clipping through static world geometry'],
+  ['error', 'SteamNetworking: connection timeout for client 47'],
+  ['info', 'DarkRP: Money printer overheated — $500 fine issued'],
+  ['sys', 'Havok: rigid body solver iteration overflow (instability detected)'],
+  ['warn', 'HDR: texture lookup failed — rendering ERROR mesh for ent_185'],
+  ['sys', 'MCPD enforcement quota met — 3 civilians fined for "existing"'],
+  ['error', 'lua error: attempt to index nil value in darkrp_jobs (line 2048)'],
+  ['info', 'DarkRP: player "xXshadowkill3rXx" wardrobe prop-surfing'],
+  ['warn', 'ECPU unit lost connection — reestablishing radio authority'],
+  ['sys', 'sv_cheats 1: executive superuser command accepted'],
+  ['error', 'ERROR: missing model "models/combine_elite_charger.mdl"'],
+  ['info', 'Ammo Shift active: item_ammo_smg1 deprecated (removed from pool)'],
+];
+
+let msgTimer = 0;
+function randomMessages(dt) {
+  msgTimer += dt;
+  if (msgTimer > 3 + Math.random() * 4) {
+    msgTimer = 0;
+    const m = RANDOM_MESSAGES[Math.floor(Math.random() * RANDOM_MESSAGES.length)];
+    addConsoleLog(m[0], m[1]);
+  }
+}
+
+// ---- INITIAL WORLD POPULATION ----
+function populateWorld() {
+  // Civilians
+  for (let i = 0; i < 8; i++) {
+    entities.push(new Civilian(
+      MAP_ZONES[0].x + Math.random() * MAP_ZONES[0].w,
+      MAP_ZONES[0].y + Math.random() * MAP_ZONES[0].h
+    ));
+  }
+  // MCPD patrol
+  for (let i = 0; i < 4; i++) {
+    entities.push(new MCPD(
+      MAP_ZONES[0].x + Math.random() * MAP_ZONES[0].w,
+      MAP_ZONES[4].y + Math.random() * MAP_ZONES[4].h
+    ));
+  }
+  // ECPU at HQ
+  for (let i = 0; i < 3; i++) {
+    entities.push(new ECPU(
+      MAP_ZONES[1].x + Math.random() * MAP_ZONES[1].w,
+      MAP_ZONES[1].y + Math.random() * MAP_ZONES[1].h
+    ));
+  }
+  // RPG Gang at depot
+  for (let i = 0; i < 5; i++) {
+    entities.push(new RPGGanger(
+      MAP_ZONES[3].x + Math.random() * MAP_ZONES[3].w,
+      MAP_ZONES[3].y + Math.random() * MAP_ZONES[3].h
+    ));
+  }
+  addConsoleLog('sys', 'World populated. Entity count: ' + entities.length);
+  addConsoleLog('info', 'Ammo Shift ACTIVE — all ballistic ammo deprecated');
+  addConsoleLog('admin', 'President Michael logged in [superuser | sv_cheats 1]');
+}
+
+// ---- MAIN LOOP ----
+let lastTime = null;
+function tick(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.04);
+  lastTime = timestamp;
+
+  if (!paused) {
+    simTime += dt;
+
+    // Update entities
+    entities.forEach(e => { if (e.alive) e.update(dt); });
+    // Remove dead
+    for (let i = entities.length - 1; i >= 0; i--) {
+      if (!entities[i].alive) entities.splice(i, 1);
+    }
+
+    // Update projectiles
+    projectiles.forEach(p => p.update());
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      if (!projectiles[i].alive) projectiles.splice(i, 1);
+    }
+
+    // Physics
+    resolveCollisions();
+    // Particles
+    updateParticles(dt);
+
+    // Autonomous spawn — RPG gangers occasionally
+    if (Math.random() < 0.005 && entities.filter(e => e.type === 'rpg').length < 8) {
+      const z = MAP_ZONES[3];
+      entities.push(new RPGGanger(z.x + Math.random() * z.w, z.y + Math.random() * z.h));
+      addConsoleLog('sys', '[RPG GANG] Reinforcements spawned from Depot');
+    }
+
+    // Autonomous spawn — Civilians
+    if (Math.random() < 0.003 && entities.filter(e => e.type === 'civilian').length < 15) {
+      entities.push(new Civilian(
+        MAP_ZONES[0].x + Math.random() * MAP_ZONES[0].w,
+        MAP_ZONES[0].y + Math.random() * MAP_ZONES[0].h
+      ));
+    }
+
+    randomMessages(dt);
+    updateHUD();
+  }
+
+  // ---- RENDER ----
+  ctx.clearRect(0, 0, W, H);
+  drawWorld(ctx);
+  drawParticles(ctx);
+
+  // Draw projectiles
+  projectiles.forEach(p => p.draw(ctx));
+
+  // Draw entities
+  entities.forEach(e => { if (e.alive) e.draw(ctx); });
+
+  // Minimap
+  drawMinimap();
+
+  // HDR scan-line effect (subtle)
+  ctx.save();
+  ctx.globalAlpha = 0.03;
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillStyle = y % 8 === 0 ? '#000' : 'transparent';
+    ctx.fillRect(0, y, W, 2);
+  }
+  ctx.restore();
+
+  requestAnimationFrame(tick);
+}
+
+// ---- MAP THUMBNAIL ----
+function drawMapThumb() {
+  const tc = document.getElementById('mapThumbCanvas');
+  const tctx = tc.getContext('2d');
+  tctx.fillStyle = '#0a0a12';
+  tctx.fillRect(0, 0, 180, 100);
+  const rx = 180 / 1200, ry = 100 / 700;
+  MAP_ZONES.forEach(z => {
+    tctx.fillStyle = z.color;
+    tctx.fillRect(z.x * rx, z.y * ry, z.w * rx, z.h * ry);
+  });
+  tctx.strokeStyle = 'rgba(255,140,0,0.4)';
+  tctx.lineWidth = 1;
+  MAP_ZONES.forEach(z => tctx.strokeRect(z.x * rx, z.y * ry, z.w * rx, z.h * ry));
+}
+
+// ---- BOOT ----
+drawMapThumb();
+triggerLoadingScreen('TBMG_Country_MainCity2');
+setTimeout(() => {
+  populateWorld();
+  requestAnimationFrame(tick);
+}, 100);
+</script>
+</body>
+</html>
