@@ -1,0 +1,56 @@
+name: Build TBMG x64 Game DLLs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-x64:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout TBMG repository (scripts only)
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            .github
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up MSBuild (VS 2022)
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Clone ValveSoftware/source-sdk-2013 (master)
+        shell: cmd
+        run: git clone --depth 1 --branch master https://github.com/ValveSoftware/source-sdk-2013.git sdk_src
+
+      - name: Apply TBMG C++ patches
+        shell: cmd
+        run: python .github/scripts/patch_sdk_x64.py sdk_src
+
+      - name: Generate Visual Studio 2022 win64 solution
+        shell: cmd
+        run: |
+          cd sdk_src\src
+          devtools\bin\vpc.exe /hl2mp /define:SOURCESDK /mksln tbmg_x64.sln +game
+
+      - name: Build 64-bit Release client.dll and server.dll
+        shell: cmd
+        run: |
+          msbuild sdk_src\src\tbmg_x64.sln /p:Configuration=Release /p:Platform=win64 /t:client_win64_hl2mp;server_win64_hl2mp /m /v:minimal
+
+      - name: Verify built x64 DLLs
+        shell: pwsh
+        run: |
+          Get-Item sdk_src/game/mod_hl2mp/bin/x64/client.dll, sdk_src/game/mod_hl2mp/bin/x64/server.dll | Format-List Name, Length
+
+      - name: Upload x64 DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbmg-bin-x64
+          path: |
+            sdk_src/game/mod_hl2mp/bin/x64/client.dll
+            sdk_src/game/mod_hl2mp/bin/x64/server.dll
+          if-no-files-found: error

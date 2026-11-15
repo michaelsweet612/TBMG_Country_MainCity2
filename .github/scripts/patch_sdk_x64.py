@@ -83,6 +83,12 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
 
     replace_once(
         src / "game/shared/hl2mp/hl2mp_gamerules.cpp",
+        '#include "ammodef.h"\n\n#ifdef CLIENT_DLL',
+        '#include "ammodef.h"\n#include "hl2_shareddefs.h"\n\n#ifdef CLIENT_DLL',
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/hl2mp_gamerules.cpp",
         '\t#include "hl2mp_cvars.h"',
         '\t#include "hl2mp_cvars.h"\n'
         '\t#include "hl2_gamerules.h"',

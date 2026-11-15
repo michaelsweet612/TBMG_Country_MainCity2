@@ -36,6 +36,7 @@
 			game									|all_source_engine_paths|sourcetest
 			game									|all_source_engine_paths|hl2_complete
 			game									|all_source_engine_paths|hl2
+			game									|all_source_engine_paths|hl2mp/hl2mp_pak.vpk
 			platform								|all_source_engine_paths|platform
 		}
 	}
