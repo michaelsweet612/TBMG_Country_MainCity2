@@ -14,9 +14,13 @@ TBMG_Country_Game_HL2 — Standalone Source Engine Edition
 
 ## Included Features & What's New in v2.2.0
 
-- **Pure Standalone Source Engine Game (`tbmg/`)**:
+- **Pure Standalone 64-Bit Source Engine Game (`tbmg/`)**:
   - Removed the legacy Python/Pygame/WebGL prototype and removed all Garry's Mod dependencies.
-  - Native 32-bit Source SDK 2013 `client.dll` and `server.dll` in `tbmg/bin/`.
+  - Native 64-bit (`Release|win64`) Source SDK 2013 `client.dll` and `server.dll` in `tbmg/bin/x64/`, launched with `hl2_win64.exe` by `Play_TBMG (Needs Steam).bat` (with 32-bit fallback).
+- **Natural Spawning Setting (`Options → Difficulty`)**:
+  - Toggle **Natural spawning** → **Enable natural spawning at NPC nodes (no ammo)** (`tbmg_natural_spawn`, off by default and saved across sessions) in the in-game Settings menu.
+  - Spawns mobile HL2 NPCs (`npc_citizen`, `npc_metropolice`, `npc_combine_s`, `npc_vortigaunt`, `npc_zombie`, and `npc_manhack`) around verified map AI `info_node` points near active players, while strictly excluding ammo items and item crates so walkways never get blocked or stuck inside walls.
+  - Tunable via console commands: `tbmg_natural_spawn`, `tbmg_natural_spawn_interval` (default `6.0`s), `tbmg_natural_spawn_max` (default `14`), `tbmg_natural_spawn_status`, and `tbmg_natural_spawn_clear`.
 - **Fixed Skybox & HDR Sun Rendering**:
   - Replaced unsupported GMod `g_sky` (`painted`) skybox shaders in `gm_bigcity_improved.bsp` with native Source Engine `sky_day01_04` skyboxes, eliminating the Hall-of-Mirrors building edge smearing and the additive `env_sun` sky whiteout ("nuke sun") bug.
   - Calibrated HDR `TonemapController` (`AutoExposureMax 1.0`, `BloomScale 0.12`) and `env_sun` overlay scale for natural lighting.
@@ -68,7 +72,7 @@ TBMG_Country_MainCity2/
 ├── tbmg/                          # Standalone Source Engine Mod configuration & binaries
 │   ├── gameinfo.txt               # Standalone AppID 243750 search paths & metadata
 │   ├── steam.inf                  # Source Engine 2013 version descriptor
-│   ├── bin/                       # 32-bit Source SDK 2013 client.dll & server.dll
+│   ├── bin/                       # Source SDK 2013 client.dll & server.dll (bin/x64/ for 64-bit)
 │   ├── cfg/                       # autoexec.cfg, config.cfg, skill.cfg
 │   ├── maps/                      # Map selection entries (.bns) & prebuilt AI nodegraphs
 │   ├── materials/                 # Menu background & map selector preview thumbnails

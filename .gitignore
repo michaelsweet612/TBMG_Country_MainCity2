@@ -12,3 +12,7 @@ tbmg/voice_ban.dt
 tbmg/cfg/server_blacklist.txt
 tbmg/save/
 sdk_src/
+source_engine/scripts/*.vpk
+tbmg/screenshots/
+tbmg/user_custom/
+tbmg/sound_workshop/

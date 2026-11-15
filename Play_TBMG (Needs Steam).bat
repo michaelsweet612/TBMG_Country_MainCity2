@@ -30,9 +30,14 @@ for %%P in (
     "E:\SteamLibrary\steamapps\common\Source SDK Base 2013 Multiplayer"
     "F:\SteamLibrary\steamapps\common\Source SDK Base 2013 Multiplayer"
 ) do (
-    if not defined SDK_EXE if exist "%%~P\hl2.exe" (
-        set "SDK_DIR=%%~P"
-        set "SDK_EXE=%%~P\hl2.exe"
+    if not defined SDK_EXE (
+        if exist "%%~P\hl2_win64.exe" (
+            set "SDK_DIR=%%~P"
+            set "SDK_EXE=%%~P\hl2_win64.exe"
+        ) else if exist "%%~P\hl2.exe" (
+            set "SDK_DIR=%%~P"
+            set "SDK_EXE=%%~P\hl2.exe"
+        )
     )
 )
 
@@ -40,7 +45,10 @@ if not defined SDK_EXE (
     for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Valve\Steam" /v SteamPath 2^>nul') do (
         set "STEAM_ROOT=%%B"
         set "STEAM_ROOT=!STEAM_ROOT:/=\!"
-        if exist "!STEAM_ROOT!\steamapps\common\Source SDK Base 2013 Multiplayer\hl2.exe" (
+        if exist "!STEAM_ROOT!\steamapps\common\Source SDK Base 2013 Multiplayer\hl2_win64.exe" (
+            set "SDK_DIR=!STEAM_ROOT!\steamapps\common\Source SDK Base 2013 Multiplayer"
+            set "SDK_EXE=!SDK_DIR!\hl2_win64.exe"
+        ) else if exist "!STEAM_ROOT!\steamapps\common\Source SDK Base 2013 Multiplayer\hl2.exe" (
             set "SDK_DIR=!STEAM_ROOT!\steamapps\common\Source SDK Base 2013 Multiplayer"
             set "SDK_EXE=!SDK_DIR!\hl2.exe"
         )
