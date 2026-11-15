@@ -1,0 +1,5 @@
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/map_thumbs/gm_bigcity_improved"
+	"$vertexalpha" 1
+}

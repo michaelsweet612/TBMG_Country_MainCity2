@@ -1,0 +1,7 @@
+"Flatgrass"
+{
+	"map"		"gm_flatgrass"
+	"image"		"map_thumbs/gm_flatgrass"
+	"comment"	"Open green flatgrass plain with central concrete structure."
+	"lock"		"0"
+}

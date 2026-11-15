@@ -8,7 +8,7 @@ TBMG_Country_Game_HL2 — Standalone Source Engine Edition
 
 1. Make sure **Steam** is running and **Source SDK Base 2013 Multiplayer** (free in Steam Tools, AppID `243750`) is installed.
 2. Double-click **`Play_TBMG.bat`** (or **`Play_TBMG (Needs Steam).bat`**).
-3. The game launches directly into **`gm_bigcity_improved`** (**MainCity2**) with full HEV Suit HUD, weapons, soundscapes, and patrolling Combine/Rebel NPCs.
+3. The game launches directly to the **Main Menu**. Click **PLAY GAME** to open the **Play Game - Select Map** window and choose **`MainCity2 (Big City)`** (`gm_bigcity_improved`) or **`Flatgrass`** (`gm_flatgrass`) with full HEV Suit HUD, weapons, soundscapes, and vehicles.
 
 ---
 
@@ -70,9 +70,12 @@ TBMG_Country_MainCity2/
 │   ├── steam.inf                  # Source Engine 2013 version descriptor
 │   ├── bin/                       # 32-bit Source SDK 2013 client.dll & server.dll
 │   ├── cfg/                       # autoexec.cfg, config.cfg, skill.cfg
-│   └── resource/                  # Custom main menu (gamemenu.res) & localization
+│   ├── maps/                      # Map selection entries (.bns) & prebuilt AI nodegraphs
+│   ├── materials/                 # Menu background & map selector preview thumbnails
+│   ├── resource/                  # Main menu (gamemenu.res), map selector UI, schemes & localization
+│   └── scripts/                   # Map selector manifest & chapter backgrounds config
 └── source_engine/                 # Shared maps, materials, models, sounds, and scripts
-    ├── maps/                      # gm_bigcity_improved.bsp (MainCity2)
+    ├── maps/                      # gm_bigcity_improved.bsp (MainCity2) & gm_flatgrass.bsp (Flatgrass)
     ├── materials/                 # Skyboxes, decals, sprites, and world materials
     ├── models/                    # Props, vehicles, weapons, and foliage models
     ├── scripts/                   # Custom BigCity soundscapes & UI sound fixes

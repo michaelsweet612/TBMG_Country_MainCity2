@@ -8,7 +8,7 @@ echo     TBMG: Country ^& MainCity2 — Source SDK 2013 Standalone Game (Steam)
 echo ===============================================================================
 echo  Engine:     Source SDK Base 2013 Multiplayer (AppID 243750)
 echo  Mod Dir:    tbmg\
-echo  Default Map: gm_bigcity_improved (MainCity2)
+echo  Maps:       MainCity2 (gm_bigcity_improved), Flatgrass (gm_flatgrass)
 echo ===============================================================================
 echo.
 
@@ -53,7 +53,7 @@ if defined SDK_EXE (
     echo.
     echo Launching TBMG as its own standalone Source Engine game...
     cd /d "%SDK_DIR%"
-    start "" "%SDK_EXE%" -steam -game "%MOD_DIR%" +map gm_bigcity_improved
+    start "" "%SDK_EXE%" -steam -game "%MOD_DIR%"
     exit /b 0
 )
 

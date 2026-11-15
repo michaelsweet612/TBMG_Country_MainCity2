@@ -2,7 +2,7 @@
 {
 	game		"TBMG: Country & MainCity2"
 	title		"TBMG: MAINCITY2"
-	title2		"2007 Warfare & Sandbox Edition"
+	title2		"2007 Warfare + Sandbox Edition"
 	developer	"Michael"
 	gamelogo	0
 	type		singleplayer_only

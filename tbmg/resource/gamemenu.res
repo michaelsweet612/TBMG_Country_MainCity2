@@ -9,8 +9,8 @@
 	}
 	"2"
 	{
-		"label" "ENTER MAINCITY2 (BIG CITY)"
-		"command" "engine map gm_bigcity_improved"
+		"label" "PLAY GAME"
+		"command" "OpenBonusMapsDialog"
 		"InGameOrder" "20"
 		"notmulti" "1"
 	}

@@ -1,0 +1,7 @@
+"MainCity2 (Big City)"
+{
+	"map"		"gm_bigcity_improved"
+	"image"		"map_thumbs/gm_bigcity_improved"
+	"comment"	"Large open urban sandbox city with streets, skyscrapers, and highway."
+	"lock"		"0"
+}
