@@ -139,3 +139,14 @@
 
 	"wave"	"#music\HL2_song7.mp3"
 }
+
+"Hud.Hint"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"0.35"
+	"soundlevel"  "SNDLVL_NONE"
+	"pitch"	"PITCH_NORM"
+
+	"wave"	"common/wpn_hudon.wav"
+}
+

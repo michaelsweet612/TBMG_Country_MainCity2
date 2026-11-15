@@ -1,7 +1,0 @@
-{
-  "graphics_preset": "Alter Heavy Graphics",
-  "fog_enabled": true,
-  "fog_distance": 38.0,
-  "max_bullet_decals": 500,
-  "selected_map": "gm_bigcity"
-}
