@@ -117,7 +117,7 @@
 	"soundlevel"  "SNDLVL_NONE"
 	"pitch"	"PITCH_NORM"
 
-	"wave"	"common/wpn_hudon.wav"
+	"wave"	"common/wpn_select.wav"
 }
 
 "Player.WeaponSelectionClose"
@@ -147,6 +147,6 @@
 	"soundlevel"  "SNDLVL_NONE"
 	"pitch"	"PITCH_NORM"
 
-	"wave"	"common/wpn_hudon.wav"
+	"wave"	"common/wpn_select.wav"
 }
 
