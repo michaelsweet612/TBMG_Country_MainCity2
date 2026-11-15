@@ -82,7 +82,7 @@ def print_colorful_launcher_banner():
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  NATIVE C / C++ SOURCE ENGINE BRIDGE (HL2 & GARRY'S MOD DLLs + .RES PARSER)
+#  NATIVE C / C++ SOURCE ENGINE BRIDGE (HL2 & SOURCE SDK 2013 DLLs + .RES PARSER)
 # ═══════════════════════════════════════════════════════════════════════════
 class SourceEngineBridge:
     """
@@ -2338,7 +2338,7 @@ MAP_MAINCITY2 = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
 
-# gm_bigcity — Garry's Mod / Source Engine iconic urban sandbox map:
+# gm_bigcity — Source Engine iconic urban sandbox map:
 # Wide asphalt avenues, towering Twin Towers / high-rise glass skyscrapers (2, 3, 5),
 # industrial brick warehouses (1, 4), and a large Source Engine Water Canal & Harbor Basin (7).
 MAP_GM_BIGCITY = [
@@ -6879,7 +6879,7 @@ class Game:
                     continue
 
                 if is_bigcity:
-                    # Garry's Mod gm_bigcity High-Rise Skyscrapers, Twin Towers & Industrial Brick Warehouses
+                    # Source Engine gm_bigcity High-Rise Skyscrapers, Twin Towers & Industrial Brick Warehouses
                     if wt == 2 and 20 <= z <= 24 and (12 <= x <= 16 or 21 <= x <= 25):
                         # Iconic gm_bigcity Twin Towers!
                         b_tex = tex_skyscraper
@@ -8173,7 +8173,7 @@ class Game:
             return
 
         if self.current_map == "gm_bigcity":
-            # Populate Garry's Mod gm_bigcity avenues, Twin Towers plaza, and Water Canals!
+            # Populate Source Engine gm_bigcity avenues, Twin Towers plaza, and Water Canals!
             civ_spawns = [
                 (10.5, 8.5), (14.5, 8.5), (22.5, 8.5), (32.5, 8.5),
                 (10.5, 18.5), (28.5, 18.5), (23.5, 25.5), (14.5, 25.5)
@@ -13097,7 +13097,7 @@ class Game:
             return
         w, h = surf.get_size()
 
-        # Top Source Hammer / Garry's Mod style Map Editor Banner
+        # Top Source Hammer style Map Editor Banner
         banner_h = 68
         banner = pygame.Surface((w, banner_h), pygame.SRCALPHA)
         banner.fill((12, 16, 22, 230))
@@ -13573,7 +13573,7 @@ class Game:
             self.map_editor_open = False
             self.game_state = self.STATE_PLAYING
             self.init_game()
-        elif idx == 1:  # Sandbox Mode (Garry's Mod Unrestricted)
+        elif idx == 1:  # Sandbox Mode (Source Unrestricted)
             self.sandbox_mode = True
             self.cheat_mode = True
             self.map_editor_open = False
@@ -13653,7 +13653,7 @@ class Game:
         # 3. Classic Source Engine GameMenu.res Left-Aligned Menu List
         menu_items = [
             ("NEW GAME", "Deploy into Half-Life 2 Tactical Survival Campaign (Combine Patrols & Scavenging)"),
-            ("SANDBOX MODE (GMOD)", "Deploy with all 7 HL2 weapons, infinite reserve ammo, and VPhysics prop punting"),
+            ("SANDBOX MODE (SOURCE)", "Deploy with all 7 HL2 weapons, infinite reserve ammo, and VPhysics prop punting"),
             (f"CHAPTER / MAP:  < {self.current_map} >", "Click or press Left/Right to switch active 3D Source background map & sector"),
             ("HAMMER LEVEL EDITOR  [F2]", "Launch in-engine Source Hammer Map Editor to place barriers, props & NPCs"),
             (f"OPTIONS — VIDEO:  < {self.graphics_preset} >", "Cycle Source OpenGL renderer preset (Potato PC / Standard User / Alter Heavy)"),

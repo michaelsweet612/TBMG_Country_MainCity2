@@ -32,11 +32,11 @@ A hardware-accelerated **2007-Era First-Person Warfare & DarkRP** action game se
 
 ## How to Launch
 
-Choose between the two launchers depending on whether you want to use Steam:
+Choose between the two launchers depending on whether you want to use Steam's Source Engine or the standalone desktop engine:
 
 1. **👉 [`Play_TBMG (Needs Steam).bat`](file:///c:/Users/Michael/Downloads/Antigravity/TBMG_Country_MainCity2/Play_TBMG%20(Needs%20Steam).bat)**:
-   - Launches the full **Source Engine** edition via Steam (Garry's Mod / Standalone Source SDK 2013).
-   - Starts directly into **MainCity2** (`gm_bigcity_improved`) with Physics Gun, Tool Gun, Q Spawn Menu, Combine/Metrocop NPCs, and the F1 Admin Terminal.
+   - Launches **TBMG: Country & MainCity2** as its own standalone **Source Engine** game powered by **Source SDK Base 2013 Multiplayer** (free on Steam, AppID `243750` — no Garry's Mod required!).
+   - Uses the included [`tbmg/`](file:///c:/Users/Michael/Downloads/Antigravity/TBMG_Country_MainCity2/tbmg) mod directory (`gameinfo.txt`, `bin/client.dll`, `bin/server.dll`, `cfg/`, `resource/gamemenu.res`) and [`source_engine/`](file:///c:/Users/Michael/Downloads/Antigravity/TBMG_Country_MainCity2/source_engine) maps/assets to boot directly into **MainCity2** (`gm_bigcity_improved`) and **BigCity Roleplay** (`gm_bigcity_improved_rp`).
 
 2. **👉 [`Play_TBMG (No Steam Needed).bat`](file:///c:/Users/Michael/Downloads/Antigravity/TBMG_Country_MainCity2/Play_TBMG%20(No%20Steam%20Needed).bat)**:
    - 100% standalone desktop 3D game — **No Steam required**.

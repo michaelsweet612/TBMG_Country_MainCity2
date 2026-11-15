@@ -2,3 +2,7 @@ __pycache__/
 build/
 dist/
 *.pyc
+console.log
+*.cache
+*.tmp
+tbmg/downloadlists/
