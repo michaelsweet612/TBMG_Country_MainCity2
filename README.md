@@ -1,4 +1,4 @@
-# TBMG: Country & MainCity2 — Standalone Source Engine Edition
+TBMG_Country_Game_HL2 — Standalone Source Engine Edition
 
 **TBMG: Country & MainCity2** is a standalone **Source Engine** game built on **Source SDK Base 2013 Multiplayer** (`AppID 243750`). It runs directly on Valve's Source Engine with its own standalone mod directory (`tbmg/`) and does **not** require Garry's Mod or any legacy Python/WebGL wrapper.
 
