@@ -1,65 +1,185 @@
-TBMG_Country_Game_HL2 — Standalone Source Engine Edition
+# TBMG: Country & MainCity2 — Standalone 64-Bit Source Engine Edition
 
-**TBMG: Country & MainCity2** is a standalone **Source Engine** game built on **Source SDK Base 2013 Multiplayer** (`AppID 243750`). It runs directly on Valve's Source Engine with its own standalone mod directory (`tbmg/`) and does **not** require Garry's Mod or any legacy Python/WebGL wrapper.
-
----
-
-## Quick Start
-
-1. Make sure **Steam** is running and **Source SDK Base 2013 Multiplayer** (free in Steam Tools, AppID `243750`) is installed.
-2. Double-click **`Play_TBMG.bat`** (or **`Play_TBMG (Needs Steam).bat`**).
-3. The game launches directly to the **Main Menu**. Click **PLAY GAME** to open the **Play Game - Select Map** window and choose **`MainCity2 (Big City)`** (`gm_bigcity_improved`) or **`Flatgrass`** (`gm_flatgrass`) with full HEV Suit HUD, weapons, soundscapes, and vehicles.
+**TBMG: Country & MainCity2** (`v2.2.0`) is a standalone **64-bit Source Engine** game built directly on **Source SDK Base 2013 Multiplayer** (`AppID 243750`). It runs in its own self-contained mod directory (`tbmg/`) with zero Garry's Mod dependency and zero legacy Python/WebGL wrappers.
 
 ---
 
-## Included Features & What's New in v2.2.0
+## Table of Contents
 
-- **Pure Standalone 64-Bit Source Engine Game (`tbmg/`)**:
-  - Removed the legacy Python/Pygame/WebGL prototype and removed all Garry's Mod dependencies.
-  - Native 64-bit (`Release|win64`) Source SDK 2013 `client.dll` and `server.dll` in `tbmg/bin/x64/`, launched with `hl2_win64.exe` by `Play_TBMG (Needs Steam).bat` (with 32-bit fallback).
-- **Natural Spawning Setting (`Options → Difficulty`)**:
-  - Toggle **Natural spawning** → **Enable natural spawning at NPC nodes (no ammo)** (`tbmg_natural_spawn`, off by default and saved across sessions) in the in-game Settings menu.
-  - Spawns mobile HL2 NPCs (`npc_citizen`, `npc_metropolice`, `npc_combine_s`, `npc_vortigaunt`, `npc_zombie`, and `npc_manhack`) around verified map AI `info_node` points near active players, while strictly excluding ammo items and item crates so walkways never get blocked or stuck inside walls.
-  - Tunable via console commands: `tbmg_natural_spawn`, `tbmg_natural_spawn_interval` (default `6.0`s), `tbmg_natural_spawn_max` (default `14`), `tbmg_natural_spawn_status`, and `tbmg_natural_spawn_clear`.
-- **Fixed Skybox & HDR Sun Rendering**:
-  - Replaced unsupported GMod `g_sky` (`painted`) skybox shaders in `gm_bigcity_improved.bsp` with native Source Engine `sky_day01_04` skyboxes, eliminating the Hall-of-Mirrors building edge smearing and the additive `env_sun` sky whiteout ("nuke sun") bug.
-  - Calibrated HDR `TonemapController` (`AutoExposureMax 1.0`, `BloomScale 0.12`) and `env_sun` overlay scale for natural lighting.
-- **Full Audio, City Soundscapes & Clean SDK UI**:
-  - Added all 27 missing city ambient `.wav` sound files (dogs, traffic, car horns, sirens, garbage trucks, helicopters, distant trains, and Episode 1 citizen voice lines), registered `soundscapes_gm_bigcity_improved.txt` in `soundscapes_manifest.txt`, and fixed missing UI sounds (`wpn_select.wav` & `Hud.Hint`) in `game_sounds_ui.txt`.
-  - Bundled all missing decals, sprites (`sprites/glow`, `effects/huntertracer`), and foliage models (`models/props/cs_militia/trees*`).
-  - Removed 619 stale/duplicate GMod `source_engine/resource/` and `source_engine/scripts/` overrides so Source SDK 2013's native UI, options dialogs, closed-caption settings, and localization load cleanly, and set `closecaption "0"` by default (toggleable in Options → Audio).
-- **Fixed NPC Health (`1 HP` Bug) & Vehicles**:
-  - Restored full Half-Life 2 `tbmg/cfg/skill.cfg` ConVars (`sk_citizen_health "40"`, `sk_metropolice_health "40"`, `sk_combine_s_health "50"`, weapon damage, and ammo caps) so NPCs no longer default to `1 HP`.
-  - **Full HEV Suit & Arsenal on Spawn**: Every spawn point automatically equips the **HEV Suit** (Health/Suit/Ammo HUD, `SHIFT` Sprint, `F` Flashlight, `Z` Zoom) and full Half-Life 2 weapon loadout (`Gravity Gun`, `Crowbar`, `USP Pistol`, `.357 Magnum`, `MP7 SMG1`, `AR2 Pulse Rifle`, `SPAS-12 Shotgun`, `Crossbow`, `RPG`, `Frag Grenades`, `Bugbait`).
-  - **Active City AI & Fixed AI Node Graph**: Trimmed excess `info_node` count to `1,400` (within Source Engine's `1,500` node limit) and populated the streets with **Combine Civil Protection Metrocops**, **Combine Overwatch Soldiers**, **City Scanners**, **Resistance Rebels**, and **Ammo Crates**.
-- **Clean HUD & Built-in Developer Console (`~`)**:
-  - Configured `developer 0` and `con_notifytime 0` in `tbmg/cfg/autoexec.cfg` so debug/console messages never clutter the top-left corner of the screen and stay strictly inside the built-in Source Engine Developer Console (`~`).
+- [Requirements](#requirements)
+- [Quick Start & Installation](#quick-start--installation)
+- [Maps & Play Game Selector](#maps--play-game-selector)
+- [Natural Spawning Settings](#natural-spawning-settings)
+- [What's New in v2.2.0](#whats-new-in-v220)
+- [Core Gameplay Features](#core-gameplay-features)
+- [Controls, Tactical Binds & Console Commands](#controls-tactical-binds--console-commands)
+- [Building 64-Bit Game DLLs from Source](#building-64-bit-game-dlls-from-source)
+- [Repository Structure](#repository-structure)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-> **Vehicles & NPC Health Fixed:** Drivable Scout Buggies (`F6`) and Airboats (`F7`) are restored with `r_shadowrendertotexture "0"` (preventing the `CUtlLinkedList overflow!` shadow decal crash), and `tbmg/cfg/skill.cfg` restores full Half-Life 2 NPC health & weapon damage values.
+## Requirements
 
-## Controls & Built-in Tactical Binds
+- **OS**: Windows (64-bit recommended for `hl2_win64.exe` and `tbmg/bin/x64/`; 32-bit fallback binaries remain in `tbmg/bin/`).
+- **Steam + Source SDK Base 2013 Multiplayer**: Free under **Steam → Library → Tools** (`AppID 243750`). Steam must be running when launching the game.
+- **No Garry's Mod Required**: All game logic, UI, maps, sounds, and materials load standalone through Source SDK Base 2013 Multiplayer.
 
-| Key | Action | Console Command / Alias |
+---
+
+## Quick Start & Installation
+
+### Option A — Standalone Release Download (Recommended)
+
+1. Install and launch **Steam**, and install **Source SDK Base 2013 Multiplayer** (`AppID 243750` from Steam Tools).
+2. Download **`TBMG_Standalone_Source2013_v2.2.0.zip`** from the [Releases](https://github.com/michaelsweet612/TBMG_Country_Game_HL2/releases) page and extract the entire folder.
+3. Double-click **`Play_TBMG.bat`** (or **`Play_TBMG (Needs Steam).bat`**).
+   - The launcher automatically detects **Source SDK Base 2013 Multiplayer** across standard Steam library drives and the Windows Registry, prefers `hl2_win64.exe` (falling back to `hl2.exe` if unavailable), and opens `steam://install/243750` if you prompt it to install the SDK.
+4. On the **Main Menu**, click **PLAY GAME** to open the **Select Map** window and pick your map.
+
+### Option B — Clone from Git Repository
+
+Map `.bsp` and `.nav` files are tracked with **Git LFS**, so ensure Git LFS is enabled before cloning:
+
+```bash
+git lfs install
+git clone https://github.com/michaelsweet612/TBMG_Country_Game_HL2.git
+cd TBMG_Country_MainCity2
+git lfs pull
+```
+
+Then run **`Play_TBMG.bat`** or **`Play_TBMG (Needs Steam).bat`**.
+
+---
+
+## Maps & Play Game Selector
+
+Instead of dropping straight into a map on launch, **TBMG** boots cleanly to the **Main Menu** (`tbmg/resource/gamemenu.res`). Clicking **PLAY GAME** opens the map selector dialog (`tbmg/maps/*.bns`):
+
+| Menu Title | Map File | Description |
+| :--- | :--- | :--- |
+| **`MainCity2 (Big City)`** | `gm_bigcity_improved` | Large open urban sandbox city with streets, skyscrapers, highway, parked Scout Buggies, active Combine/Resistance patrols, rebuilt AI node graph (`1,400` nodes), calibrated HDR lighting (`sky_day01_04`), and custom city soundscapes. |
+| **`Flatgrass`** | `gm_flatgrass` | Open green flatgrass plain with central concrete structure and prebuilt AI node graph (`gm_flatgrass.ain`). |
+
+> **Additional Bundled Map Variant:** `gm_bigcity_improved_rp` (`source_engine/maps/gm_bigcity_improved_rp.bsp`, paired with `.nav` and `.ain`) is also included and can be loaded anytime via the developer console (`~`) with `map gm_bigcity_improved_rp`. The editable Hammer source `MainCity2.vmf` is included under `source_engine/maps/`.
+
+---
+
+## Natural Spawning Settings
+
+You can toggle dynamic NPC world population directly in the in-game settings menu:
+
+1. Open **Options → Difficulty**.
+2. Locate the **Natural spawning** section near the bottom of the tab.
+3. Check or uncheck **`Enable natural spawning at NPC nodes (no ammo)`**.
+   - Changing the checkbox updates `tbmg_natural_spawn` immediately and saves it to `tbmg/cfg/config.cfg` via `host_writeconfig`.
+
+### How It Works
+
+- **Node-Based Placement**: Uses verified `NODE_GROUND` AI `info_node` points in the map's AI node graph (`g_pBigAINet`, excluding fallen or hull-blocked nodes and preferring linked graph nodes) between **`500` and `3400` units** from active players and at least **`220` units** apart from other naturally spawned NPCs.
+- **Collision & Clearance Checks**: Performs padded `UTIL_TraceHull` (`MASK_NPCSOLID`) ground-snapping and post-spawn clearance verification so spawned NPCs do not clip into geometry or block corridors, and automatically cleans up tracked NPCs that fall too far out of range (`> 4800` units).
+- **Zero Ammo Spawning**: Spawns only mobile Half-Life 2 NPCs (`npc_citizen`, `npc_metropolice`, `npc_combine_s`, `npc_vortigaunt`, `npc_zombie`, and airborne `npc_manhack`). It **never** spawns `item_ammo_*`, `item_box_*`, or `item_item_crate` entities so ammo props never wedge into walls or block walkways.
+
+### Natural Spawning Console Variables & Commands
+
+| Command / ConVar | Default | Description |
+| :--- | :--- | :--- |
+| `tbmg_natural_spawn` | `0` | Master toggle (`0` = off, `1` = on). Replicated & archived (`FCVAR_ARCHIVE \| FCVAR_REPLICATED`); synced with the **Options → Difficulty** checkbox. |
+| `tbmg_natural_spawn_interval` | `6.0` | Seconds between natural spawn evaluation ticks. |
+| `tbmg_natural_spawn_max` | `14` | Maximum concurrent naturally spawned NPCs allowed alive at once (with entity budget safety cap). |
+| `tbmg_natural_spawn_status` | *(command)* | Prints current node counts, linked candidate count, active tracked NPC count, total spawned, and current entity count. |
+| `tbmg_natural_spawn_clear` | *(command)* | Immediately removes all currently tracked naturally spawned NPCs. |
+
+---
+
+## What's New in v2.2.0
+
+- **Native 64-Bit Engine Binaries & Launcher (`tbmg/bin/x64/`)**:
+  - Compiled `Release|win64` `client.dll` and `server.dll` directly from `ValveSoftware/source-sdk-2013` + TBMG C++ patches, resolving 32-bit `CUtlLinkedList overflow!` crashes and 64-bit `DMG_SNIPER` compilation issues.
+  - Updated `Play_TBMG (Needs Steam).bat` to launch `hl2_win64.exe` automatically when present (with `hl2.exe` fallback).
+- **Natural Spawning UI & Node Spawner**:
+  - Added `CTBMGNaturalSpawnPanel` into the SDK Difficulty tab (`tbmg_options_bridge`) and server-side node spawner (`tbmg_natural_spawn`).
+- **Map Selector & Main Menu Flow**:
+  - Booting the game lands on the Main Menu with **PLAY GAME** opening the map selection dialog (`gm_bigcity_improved`, `gm_flatgrass`) instead of bypassing menus.
+- **Weapon Script & HL2MP Crash Fixes**:
+  - Updated `ReadEncryptedKVFile` in `weapon_parse.cpp` to fall back from `"MOD"` to `"GAME"` search paths and mounted `hl2mp/hl2mp_pak.vpk` in `tbmg/gameinfo.txt`, eliminating missing `weapon_*.txt` script errors.
+  - Guarded HL2-only `CHalfLife2 *` casts on NPC death in `npc_combines.cpp` and `npc_metropolice.cpp` under `#if !defined( HL2MP )` so killing Combine Metrocops and Soldiers in 64-bit HL2MP never crashes.
+  - Restricted the server HTML MOTD popup in `hl2mp_client.cpp` to dedicated servers (`engine->IsDedicatedServer()`) so local games aren't covered by a blank MOTD box on spawn.
+- **Inherited Core Fixes from v2.1.x**:
+  - Replaced GMod `g_sky` (`painted`) skyboxes with native `sky_day01_04` and calibrated HDR (`mat_hdr_level 2`, `mat_autoexposure_max 1.0`, `mat_bloomscale 0.12`) to fix hall-of-mirrors smearing and blown-out sun glare.
+  - Restored full HL2 `tbmg/cfg/skill.cfg` ConVars (`sk_citizen_health "40"`, `sk_metropolice_health "40"`, `sk_combine_s_health "50"`, weapon damages, and ammo limits) so NPCs never spawn with `1 HP`.
+  - Enabled `r_shadowrendertotexture "0"` for safe vehicle shadows, set `developer 0` / `con_notifytime 0` (keeping console output inside `~`), bundled 27 missing city ambient `.wav` files and soundscapes, and removed 619 stale GMod resource/script overrides so native SDK dialogs & closed captions work cleanly (`closecaption "0"` by default, configurable in **Options → Audio**).
+
+---
+
+## Core Gameplay Features
+
+- **Full HEV Suit & Arsenal on Spawn**: Equips the HEV Suit (Health/Suit/Ammo HUD, Sprint, Flashlight, Suit Zoom) and Half-Life 2 arsenal (`Gravity Gun`, `Crowbar`, `USP Pistol`, `.357 Magnum`, `MP7 SMG1`, `AR2 Pulse Rifle`, `SPAS-12 Shotgun`, `Crossbow`, `RPG`, `Frag Grenades`, `Bugbait`).
+- **Drivable Vehicles**: Drivable HL2 Scout Buggies (`ch_createjeep` / `F6`) parked in MainCity2 or spawned on demand, plus Airboats (`ch_createairboat` / `F7`).
+- **Main Menu Quick Shortcuts (`tbmg/resource/gamemenu.res`)**: When paused in-game, you can jump straight to **SPAWN SCOUT BUGGY (IN-GAME)**, **FULL ARSENAL & HEV SUIT**, **DEVELOPER CONSOLE (~)**, Save/Load, or **Options**.
+
+---
+
+## Controls, Tactical Binds & Console Commands
+
+### Movement, Combat & Vehicles
+
+| Key | Action | Command / Bind |
 | :--- | :--- | :--- |
 | **`W` `A` `S` `D`** | Move / Drive Vehicle | `+forward`, `+moveleft`, `+back`, `+moveright` |
+| **`MOUSE1` / `MOUSE2`** | Primary / Secondary Fire | `+attack` / `+attack2` |
+| **`1` – `7` / Scroll / `Q`** | Select Weapon Category / Cycle / Last Weapon | `slot1`–`slot7`, `invprev`/`invnext`, `lastinv` |
+| **`R`** | Reload | `+reload` |
 | **`SPACE`** | Jump / Vehicle Handbrake | `+jump` |
 | **`SHIFT`** | Sprint / Vehicle Turbo Boost | `+speed` |
-| **`E`** | Enter / Exit Vehicle, Use Chargers & Doors | `+use` |
+| **`CTRL` / `ALT`** | Crouch / Slow Walk | `+duck` / `+walk` |
+| **`E`** | Enter/Exit Vehicle, Use Chargers & Doors | `+use` |
 | **`F`** | Toggle HEV Flashlight | `impulse 100` |
 | **`G`** | Quick-Swap Gravity Gun | `phys_swap` |
 | **`Z`** | HEV Suit Zoom | `+zoom` |
-| **`V`** | Toggle Noclip Flight | `noclip` |
+| **`C`** | Send/Recall Citizens | `impulse 50` |
 | **`~` (Tilde)** | Open Built-in Source Developer Console | `toggleconsole` |
-| **`F1`** | Give Full Arsenal + HEV Suit + Heal | `arsenal` (`impulse 101`) |
-| **`F2`** | Spawn Combine Metrocop at Crosshair | `spawn_cop` |
-| **`F3`** | Spawn Combine Overwatch Soldier at Crosshair | `spawn_soldier` |
-| **`F4`** | Spawn Resistance Rebel at Crosshair | `spawn_rebel` |
+
+### Built-In Sandbox & Tactical Hotkeys (`tbmg/cfg/autoexec.cfg`)
+
+| Key | Action | Alias / Command |
+| :--- | :--- | :--- |
+| **`V`** | Toggle Noclip Flight | `noclip` |
+| **`F1`** | Full Arsenal + HEV Suit + Health/Armor | `arsenal` (`give item_suit; impulse 101; give item_healthkit; give item_battery`) |
+| **`F2`** | Spawn Combine Metrocop (SMG1) at Crosshair | `spawn_cop` |
+| **`F3`** | Spawn Combine Overwatch Soldier (AR2) at Crosshair | `spawn_soldier` |
+| **`F4`** | Spawn Resistance Citizen (SMG1) at Crosshair | `spawn_rebel` |
 | **`F5`** | Spawn Explosive Oil Drum at Crosshair | `spawn_barrel` |
-| **`F6`** | Spawn Drivable Scout Buggy | `spawn_jeep` |
-| **`F7`** | Spawn Drivable Airboat | `spawn_airboat` |
+| **`F6`** | Spawn Drivable Scout Buggy | `spawn_jeep` (`ch_createjeep`) |
+| **`F7`** | Spawn Drivable Airboat | `spawn_airboat` (`ch_createairboat`) |
 | **`F8`** | Toggle Invincibility (Godmode) | `god` |
+| **`F9`** | Quick Load | `load quick` |
+
+Additional console aliases: `spawn_zombie` (`npc_create npc_zombie`).
+
+---
+
+## Building 64-Bit Game DLLs from Source
+
+Prebuilt binaries are already included in `tbmg/bin/x64/` (`client.dll` and `server.dll`), so end users do **not** need to compile anything to play. Developers who want to rebuild or customize the C++ code can build natively on Windows with **Visual Studio 2022 Build Tools** (with **Desktop development with C++** / `VC.Tools.x86.x64`) and Python 3:
+
+1. Clone Valve's Source SDK 2013 repository into `sdk_src` (ignored by `.gitignore`):
+   ```bash
+   git clone --depth 1 --branch master https://github.com/ValveSoftware/source-sdk-2013.git sdk_src
+   ```
+2. Apply TBMG's C++ patches and copy `.github/scripts/sdk_files/` into `sdk_src`:
+   ```bash
+   python .github/scripts/patch_sdk_x64.py sdk_src
+   ```
+3. Generate the Visual Studio 2022 `win64` solution and compile:
+   ```cmd
+   cd sdk_src\src
+   devtools\bin\vpc.exe /hl2mp /define:SOURCESDK /mksln tbmg_x64.sln +game
+   msbuild tbmg_x64.sln /p:Configuration=Release /p:Platform=win64 /t:client_win64_hl2mp;server_win64_hl2mp /m /v:minimal
+   ```
+4. Copy `sdk_src\game\mod_hl2mp\bin\x64\client.dll` and `server.dll` into `tbmg\bin\x64\`.
+
+Automated CI builds are also configured via `.github/workflows/build-x64.yml` (`workflow_dispatch`).
 
 ---
 
@@ -67,21 +187,37 @@ TBMG_Country_Game_HL2 — Standalone Source Engine Edition
 
 ```text
 TBMG_Country_MainCity2/
-├── Play_TBMG.bat                  # Main launcher for Source SDK Base 2013 Multiplayer
-├── Play_TBMG (Needs Steam).bat    # Steam Source SDK Base 2013 Multiplayer launcher
-├── tbmg/                          # Standalone Source Engine Mod configuration & binaries
-│   ├── gameinfo.txt               # Standalone AppID 243750 search paths & metadata
-│   ├── steam.inf                  # Source Engine 2013 version descriptor
-│   ├── bin/                       # Source SDK 2013 client.dll & server.dll (bin/x64/ for 64-bit)
-│   ├── cfg/                       # autoexec.cfg, config.cfg, skill.cfg
-│   ├── maps/                      # Map selection entries (.bns) & prebuilt AI nodegraphs
-│   ├── materials/                 # Menu background & map selector preview thumbnails
-│   ├── resource/                  # Main menu (gamemenu.res), map selector UI, schemes & localization
-│   └── scripts/                   # Map selector manifest & chapter backgrounds config
-└── source_engine/                 # Shared maps, materials, models, sounds, and scripts
-    ├── maps/                      # gm_bigcity_improved.bsp (MainCity2) & gm_flatgrass.bsp (Flatgrass)
-    ├── materials/                 # Skyboxes, decals, sprites, and world materials
-    ├── models/                    # Props, vehicles, weapons, and foliage models
-    ├── scripts/                   # Custom BigCity soundscapes & UI sound fixes
-    └── sound/                     # Ambient city sounds, vehicles, weapons, and VO
+├── Play_TBMG.bat                      # Convenience wrapper calling Play_TBMG (Needs Steam).bat
+├── Play_TBMG (Needs Steam).bat        # Steam Source SDK Base 2013 MP launcher (prefers hl2_win64.exe)
+├── .github/
+│   ├── scripts/
+│   │   ├── patch_sdk_x64.py           # Reproducible patcher for ValveSoftware/source-sdk-2013
+│   │   └── sdk_files/                 # TBMG C++ modules (tbmg_natural_spawn, tbmg_options_bridge)
+│   └── workflows/
+│       └── build-x64.yml              # GitHub Actions MSBuild Release|win64 workflow
+├── tbmg/                              # Standalone Source Engine mod configuration & binaries
+│   ├── gameinfo.txt                   # AppID 243750 search paths (mounts source_engine + hl2/hl2mp VPKs)
+│   ├── steam.inf                      # Source Engine 2013 app/version metadata
+│   ├── bin/                           # 32-bit fallback client.dll & server.dll
+│   │   └── x64/                       # Native 64-bit Release|win64 client.dll & server.dll
+│   ├── cfg/                           # autoexec.cfg, config.cfg, skill.cfg
+│   ├── maps/                          # .bns map selector entries & graphs/*.ain nodegraphs
+│   ├── materials/                     # Main menu backgrounds & map_thumbs previews
+│   ├── resource/                      # gamemenu.res, bonusmapsdialog.res, schemes & localization
+│   └── scripts/                       # bonus_maps_manifest.txt & chapterbackgrounds.txt
+└── source_engine/                     # Shared maps, materials, models, sounds, and scripts
+    ├── maps/                          # gm_bigcity_improved, gm_flatgrass, gm_bigcity_improved_rp (+ .nav/.ain/.vmf)
+    ├── materials/                     # Skyboxes, decals, sprites, flatgrass/water & world materials
+    ├── models/                        # Props, vehicles, weapons, and foliage models
+    ├── scripts/                       # BigCity soundscapes & UI sound fixes
+    ├── sound/                         # City ambient WAVs, vehicles, weapons, and citizen VO
+    └── vgui/                          # Shared HUD/resource VGUI corner & status icons
 ```
+
+---
+
+## Troubleshooting
+
+- **"Source SDK Base 2013 Multiplayer was not found"**: Install **Source SDK Base 2013 Multiplayer** in Steam (**Library → Tools**, `AppID 243750`). Make sure Steam is open before running `Play_TBMG (Needs Steam).bat`.
+- **Map fails to load or tiny 1 KB `.bsp` files (when cloned with `git clone`)**: You have Git LFS pointer files instead of the map binaries. Install Git LFS and run `git lfs pull`, or download the prebuilt Release ZIP instead.
+- **Natural spawning seems inactive or too crowded**: Check **Options → Difficulty → Natural spawning**, or open `~` console and run `tbmg_natural_spawn_status` to inspect candidate nodes (`nodes` / `candidates`), adjust `tbmg_natural_spawn_interval` / `tbmg_natural_spawn_max`, or run `tbmg_natural_spawn_clear` to despawn tracked NPCs.
