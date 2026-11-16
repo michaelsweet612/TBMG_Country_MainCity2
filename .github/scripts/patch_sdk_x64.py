@@ -45,6 +45,44 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
         '\t\t\t$File\t"hl2\\vehicle_jeep.h"',
     )
 
+    # 1b. Compile hl2/npc_fastzombie.cpp and hl2/weapon_alyxgun.cpp in Server (HL2MP).
+    replace_once(
+        src / "game/server/server_hl2mp.vpc",
+        '\t\t\t$File\t"hl2\\npc_enemyfinder.cpp"\n'
+        '\t\t\t$File\t"hl2\\npc_fisherman.cpp"',
+        '\t\t\t$File\t"hl2\\npc_enemyfinder.cpp"\n'
+        '\t\t\t$File\t"hl2\\npc_fastzombie.cpp"\n'
+        '\t\t\t$File\t"hl2\\npc_fisherman.cpp"',
+    )
+
+    replace_once(
+        src / "game/server/server_hl2mp.vpc",
+        '\t\t\t$File\t"hl2\\weapon_alyxgun.h"\n'
+        '\t\t\t$File\t"hl2\\weapon_annabelle.cpp"',
+        '\t\t\t$File\t"hl2\\weapon_alyxgun.cpp"\n'
+        '\t\t\t$File\t"hl2\\weapon_alyxgun.h"\n'
+        '\t\t\t$File\t"hl2\\weapon_annabelle.cpp"',
+    )
+
+    server_vcxproj = src / "game/server/server_win64_hl2mp.vcxproj"
+    if server_vcxproj.is_file():
+        replace_once(
+            server_vcxproj,
+            '    <ClCompile Include="hl2\\npc_enemyfinder.cpp" />\n'
+            '    <ClCompile Include="hl2\\npc_fisherman.cpp" />',
+            '    <ClCompile Include="hl2\\npc_enemyfinder.cpp" />\n'
+            '    <ClCompile Include="hl2\\npc_fastzombie.cpp" />\n'
+            '    <ClCompile Include="hl2\\npc_fisherman.cpp" />',
+        )
+        replace_once(
+            server_vcxproj,
+            '    <ClCompile Include="hl2\\vehicle_viewcontroller.cpp" />\n'
+            '    <ClCompile Include="hl2\\weapon_annabelle.cpp" />',
+            '    <ClCompile Include="hl2\\vehicle_viewcontroller.cpp" />\n'
+            '    <ClCompile Include="hl2\\weapon_alyxgun.cpp" />\n'
+            '    <ClCompile Include="hl2\\weapon_annabelle.cpp" />',
+        )
+
     # 2. Expose canonical HL2 AI faction relationships & class names to HL2MP gamerules.
     replace_once(
         src / "game/shared/hl2/hl2_gamerules.h",
@@ -448,6 +486,700 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
         "\t\tpPlayer->ShowViewPortPanel( PANEL_INFO, true, data );\n\n"
         "\t\tdata->deleteThis();\n"
         "\t}",
+    )
+
+    # 8. Force Father Grigori (npc_monk) to ALWAYS equip weapon_shotgun cleanly, give Alyx/Barney
+    # default HL2 weapons when spawned via npc_create, and restore HL2 NPC firing handlers
+    # (#ifndef CLIENT_DLL) in shared HL2MP weapons (pistol, smg1, ar2, shotgun, rpg).
+    replace_once(
+        src / "game/server/hl2/npc_monk.cpp",
+        "\tCNPC_Monk() {}\n"
+        "\tvoid Spawn();\n"
+        "\tvoid Precache();",
+        "\tCNPC_Monk() {}\n"
+        "\tvoid Spawn();\n"
+        "\tvoid Precache();\n"
+        "\tbool KeyValue( const char *szKeyName, const char *szValue );\n"
+        "\tvoid Weapon_Equip( CBaseCombatWeapon *pWeapon );",
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_monk.cpp",
+        "\t// We need these so that we can pick up the shotgun to throw it in the balcony scene\n"
+        "\tif ( eNewActivity == ACT_IDLE_ANGRY_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_IDLE_ANGRY_SMG1;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_WALK_AIM_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_WALK_AIM_RIFLE;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RUN_AIM_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_RUN_AIM_RIFLE;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RANGE_ATTACK_SHOTGUN_LOW )\n"
+        "\t{\n"
+        "\t\treturn ACT_RANGE_ATTACK_SMG1_LOW;\n"
+        "\t}\n\n"
+        "\treturn eNewActivity;",
+        "\t// Father Grigori always uses weapon_shotgun with Monk.mdl.\n"
+        "\tif ( eNewActivity == ACT_IDLE_ANGRY_SHOTGUN || eNewActivity == ACT_IDLE_SHOTGUN_AGITATED )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_IDLE_ANGRY_SMG1;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_IDLE_SHOTGUN_RELAXED )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_IDLE_SMG1_RELAXED;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_IDLE_SHOTGUN_STIMULATED )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_IDLE_SMG1_STIMULATED;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_WALK_AIM_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_WALK_AIM_RIFLE;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RUN_AIM_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_RUN_AIM_RIFLE;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RANGE_ATTACK_SHOTGUN_LOW )\n"
+        "\t{\n"
+        "\t\treturn ACT_RANGE_ATTACK_SMG1_LOW;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RELOAD_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_RELOAD_SMG1;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_RELOAD_SHOTGUN_LOW )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_RELOAD_SMG1_LOW;\n"
+        "\t}\n"
+        "\telse if ( eNewActivity == ACT_GESTURE_RELOAD_SHOTGUN )\n"
+        "\t{\n"
+        "\t\teNewActivity = ACT_GESTURE_RELOAD_SMG1;\n"
+        "\t}\n\n"
+        "\treturn eNewActivity;",
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_monk.cpp",
+        "void CNPC_Monk::Precache()\n"
+        "{\n"
+        '\tPrecacheModel( "models/Monk.mdl" );\n'
+        "\t\n"
+        '\tPrecacheScriptSound( "NPC_Citizen.FootstepLeft" );\n'
+        '\tPrecacheScriptSound( "NPC_Citizen.FootstepRight" );\n\n'
+        "\tBaseClass::Precache();\n"
+        "}",
+        "bool CNPC_Monk::KeyValue( const char *szKeyName, const char *szValue )\n"
+        "{\n"
+        '\tif ( FStrEq( szKeyName, "additionalequipment" ) )\n'
+        "\t{\n"
+        '\t\tm_spawnEquipment = AllocPooledString( "weapon_shotgun" );\n'
+        "\t\treturn true;\n"
+        "\t}\n\n"
+        "\treturn BaseClass::KeyValue( szKeyName, szValue );\n"
+        "}\n\n"
+        "void CNPC_Monk::Weapon_Equip( CBaseCombatWeapon *pWeapon )\n"
+        "{\n"
+        "\tBaseClass::Weapon_Equip( pWeapon );\n"
+        "\tif ( pWeapon )\n"
+        "\t{\n"
+        "\t\tpWeapon->m_fMaxRange1 = MAX( pWeapon->m_fMaxRange1, 1500.0f );\n"
+        "\t}\n"
+        "}\n\n"
+        "void CNPC_Monk::Precache()\n"
+        "{\n"
+        '\tm_spawnEquipment = AllocPooledString( "weapon_shotgun" );\n'
+        '\tPrecacheModel( "models/Monk.mdl" );\n'
+        "\t\n"
+        '\tPrecacheScriptSound( "NPC_Citizen.FootstepLeft" );\n'
+        '\tPrecacheScriptSound( "NPC_Citizen.FootstepRight" );\n\n'
+        '\tUTIL_PrecacheOther( "weapon_shotgun" );\n\n'
+        "\tBaseClass::Precache();\n"
+        "}",
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_monk.cpp",
+        "\tCapabilitiesAdd( bits_CAP_AIM_GUN );\n"
+        "\tCapabilitiesAdd( bits_CAP_MOVE_SHOOT );\n\n"
+        "\tNPCInit();",
+        "\tCapabilitiesAdd( bits_CAP_AIM_GUN );\n"
+        "\tCapabilitiesAdd( bits_CAP_MOVE_SHOOT );\n\n"
+        '\tm_spawnEquipment = AllocPooledString( "weapon_shotgun" );\n\n'
+        "\tNPCInit();",
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_alyx.cpp",
+        "\tm_iHealth\t\t\t= 80;\n\n\tNPCInit();",
+        "\tm_iHealth\t\t\t= 80;\n\n"
+        '\tif ( m_spawnEquipment == NULL_STRING || !STRING( m_spawnEquipment )[0] )\n'
+        "\t{\n"
+        '\t\tm_spawnEquipment = AllocPooledString( "weapon_alyxgun" );\n'
+        "\t}\n\n"
+        "\tNPCInit();",
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_alyx.cpp",
+        '\tPrecacheModel( "models/alyx_emptool_prop.mdl" );\n}',
+        '\tPrecacheModel( "models/alyx_emptool_prop.mdl" );\n'
+        '\tUTIL_PrecacheOther( "weapon_alyxgun" );\n}',
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_barney.cpp",
+        '\t\tPrecacheScriptSound( "NPC_Barney.Die" );',
+        '\t\tPrecacheScriptSound( "NPC_Barney.Die" );\n\t\tUTIL_PrecacheOther( "weapon_ar2" );',
+    )
+
+    replace_once(
+        src / "game/server/hl2/npc_barney.cpp",
+        "\tAddEFlags( EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION );\n\n\tNPCInit();",
+        "\tAddEFlags( EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION );\n\n"
+        '\tif ( m_spawnEquipment == NULL_STRING || !STRING( m_spawnEquipment )[0] )\n'
+        "\t{\n"
+        '\t\tm_spawnEquipment = AllocPooledString( "weapon_ar2" );\n'
+        "\t}\n\n"
+        "\tNPCInit();",
+    )
+
+    # Restore NPC weapon anim events & NPC acttables in HL2MP shared weapons (#ifndef CLIENT_DLL).
+    replace_once(
+        src / "game/shared/hl2mp/weapon_pistol.cpp",
+        "#else\n\t#include \"hl2mp_player.h\"\n#endif",
+        "#else\n\t#include \"hl2mp_player.h\"\n\t#include \"soundent.h\"\n\t#include \"ai_basenpc.h\"\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_pistol.cpp",
+        "#ifndef CLIENT_DLL\n\tDECLARE_ACTTABLE();\n#endif\n\nprivate:\n\tCNetworkVar( float,\tm_flSoonestPrimaryAttack );",
+        "#ifndef CLIENT_DLL\n"
+        "\tvoid\tOperator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );\n"
+        "\tDECLARE_ACTTABLE();\n"
+        "#endif\n\nprivate:\n\tCNetworkVar( float,\tm_flSoonestPrimaryAttack );",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_pistol.cpp",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_PISTOL,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_PISTOL,\t\t\t\tfalse },\n};",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_PISTOL,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE,\t\t\t\t\t\t\tACT_IDLE_PISTOL,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_ANGRY,\t\t\t\t\tACT_IDLE_ANGRY_PISTOL,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_PISTOL,\t\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD,\t\t\t\t\t\tACT_RELOAD_PISTOL,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_AIM,\t\t\t\t\t\tACT_WALK_AIM_PISTOL,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_AIM,\t\t\t\t\t\tACT_RUN_AIM_PISTOL,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_GESTURE_RANGE_ATTACK1,\t\tACT_GESTURE_RANGE_ATTACK_PISTOL,\t\ttrue },\n"
+        "\t{ ACT_RELOAD_LOW,\t\t\t\t\tACT_RELOAD_PISTOL_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1_LOW,\t\t\tACT_RANGE_ATTACK_PISTOL_LOW,\t\t\tfalse },\n"
+        "\t{ ACT_COVER_LOW,\t\t\t\t\tACT_COVER_PISTOL_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_AIM_LOW,\t\t\t\tACT_RANGE_AIM_PISTOL_LOW,\t\t\t\tfalse },\n"
+        "\t{ ACT_GESTURE_RELOAD,\t\t\t\tACT_GESTURE_RELOAD_PISTOL,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK,\t\t\t\t\t\t\tACT_WALK_PISTOL,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN,\t\t\t\t\t\t\tACT_RUN_PISTOL,\t\t\t\t\t\t\tfalse },\n};",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_pistol.cpp",
+        "void CWeaponPistol::Precache( void )\n{\n\tBaseClass::Precache();\n}",
+        "void CWeaponPistol::Precache( void )\n{\n\tBaseClass::Precache();\n}\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "void CWeaponPistol::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )\n"
+        "{\n"
+        "\tswitch ( pEvent->event )\n"
+        "\t{\n"
+        "\t\tcase EVENT_WEAPON_PISTOL_FIRE:\n"
+        "\t\t{\n"
+        "\t\t\tCAI_BaseNPC *npc = pOperator->MyNPCPointer();\n"
+        "\t\t\tASSERT( npc != NULL );\n"
+        "\t\t\tif ( !npc )\n"
+        "\t\t\t\treturn;\n\n"
+        "\t\t\tVector vecShootOrigin = pOperator->Weapon_ShootPosition();\n"
+        "\t\t\tVector vecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );\n\n"
+        "\t\t\tCSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );\n"
+        "\t\t\tWeaponSound( SINGLE_NPC );\n"
+        "\t\t\tpOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );\n"
+        "\t\t\tpOperator->DoMuzzleFlash();\n"
+        "\t\t\tm_iClip1 = m_iClip1 - 1;\n"
+        "\t\t}\n"
+        "\t\tbreak;\n"
+        "\t\tdefault:\n"
+        "\t\t\tBaseClass::Operator_HandleAnimEvent( pEvent, pOperator );\n"
+        "\t\t\tbreak;\n"
+        "\t}\n"
+        "}\n"
+        "#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_smg1.cpp",
+        "#else\n\t#include \"grenade_ar2.h\"\n\t#include \"hl2mp_player.h\"\n\t#include \"basegrenade_shared.h\"\n#endif",
+        "#else\n\t#include \"grenade_ar2.h\"\n\t#include \"hl2mp_player.h\"\n\t#include \"basegrenade_shared.h\"\n\t#include \"soundent.h\"\n\t#include \"ai_basenpc.h\"\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_smg1.cpp",
+        "#ifndef CLIENT_DLL\n\tDECLARE_ACTTABLE();\n#endif\n\nprotected:\n\n\tVector\tm_vecTossVelocity;",
+        "#ifndef CLIENT_DLL\n"
+        "\tvoid\tFireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir );\n"
+        "\tvoid\tOperator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary );\n"
+        "\tvoid\tOperator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );\n"
+        "\tDECLARE_ACTTABLE();\n"
+        "#endif\n\nprotected:\n\n\tVector\tm_vecTossVelocity;",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_smg1.cpp",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_SMG1,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_SMG1,\t\t\t\t\tfalse },\n};",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_SMG1,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_SMG1,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD,\t\t\t\t\t\tACT_RELOAD_SMG1,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE,\t\t\t\t\t\t\tACT_IDLE_SMG1,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_ANGRY,\t\t\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK,\t\t\t\t\t\t\tACT_WALK_RIFLE,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_AIM,\t\t\t\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_RELAXED,\t\t\t\t\tACT_IDLE_SMG1_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_STIMULATED,\t\t\t\tACT_IDLE_SMG1_STIMULATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AGITATED,\t\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_RELAXED,\t\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_STIMULATED,\t\t\t\tACT_WALK_RIFLE_STIMULATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AGITATED,\t\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_RELAXED,\t\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_STIMULATED,\t\t\t\tACT_RUN_RIFLE_STIMULATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AGITATED,\t\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_RELAXED,\t\t\t\tACT_IDLE_SMG1_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_STIMULATED,\t\t\tACT_IDLE_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_AGITATED,\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_RELAXED,\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_STIMULATED,\t\t\tACT_WALK_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_AGITATED,\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_RELAXED,\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_STIMULATED,\t\t\tACT_RUN_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_AGITATED,\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_CROUCH,\t\t\t\t\tACT_WALK_CROUCH_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH_AIM,\t\t\t\tACT_WALK_CROUCH_AIM_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN,\t\t\t\t\t\t\tACT_RUN_RIFLE,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_AIM,\t\t\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH,\t\t\t\t\tACT_RUN_CROUCH_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH_AIM,\t\t\t\tACT_RUN_CROUCH_AIM_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_GESTURE_RANGE_ATTACK1,\t\tACT_GESTURE_RANGE_ATTACK_SMG1,\t\t\ttrue },\n"
+        "\t{ ACT_RANGE_ATTACK1_LOW,\t\t\tACT_RANGE_ATTACK_SMG1_LOW,\t\t\t\ttrue },\n"
+        "\t{ ACT_COVER_LOW,\t\t\t\t\tACT_COVER_SMG1_LOW,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_AIM_LOW,\t\t\t\tACT_RANGE_AIM_SMG1_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RELOAD_LOW,\t\t\t\t\tACT_RELOAD_SMG1_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_GESTURE_RELOAD,\t\t\t\tACT_GESTURE_RELOAD_SMG1,\t\t\t\ttrue },\n};",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_smg1.cpp",
+        "void CWeaponSMG1::Equip( CBaseCombatCharacter *pOwner )\n"
+        "{\n"
+        "\tm_fMaxRange1 = 1400;\n\n"
+        "\tBaseClass::Equip( pOwner );\n"
+        "}",
+        "void CWeaponSMG1::Equip( CBaseCombatCharacter *pOwner )\n"
+        "{\n"
+        "\tm_fMaxRange1 = 1400;\n\n"
+        "\tBaseClass::Equip( pOwner );\n"
+        "}\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "void CWeaponSMG1::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir )\n"
+        "{\n"
+        "\tWeaponSoundRealtime( SINGLE_NPC );\n"
+        "\tCSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );\n"
+        "\tpOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED,\n"
+        "\t\tMAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2, entindex(), 0 );\n"
+        "\tpOperator->DoMuzzleFlash();\n"
+        "\tm_iClip1 = m_iClip1 - 1;\n"
+        "}\n\n"
+        "void CWeaponSMG1::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )\n"
+        "{\n"
+        "\tm_iClip1++;\n"
+        "\tVector vecShootOrigin, vecShootDir;\n"
+        "\tQAngle angShootDir;\n"
+        '\tGetAttachment( LookupAttachment( "muzzle" ), vecShootOrigin, angShootDir );\n'
+        "\tAngleVectors( angShootDir, &vecShootDir );\n"
+        "\tFireNPCPrimaryAttack( pOperator, vecShootOrigin, vecShootDir );\n"
+        "}\n\n"
+        "void CWeaponSMG1::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )\n"
+        "{\n"
+        "\tswitch ( pEvent->event )\n"
+        "\t{\n"
+        "\t\tcase EVENT_WEAPON_SMG1:\n"
+        "\t\t{\n"
+        "\t\t\tVector vecShootOrigin, vecShootDir;\n"
+        "\t\t\tQAngle angDiscard;\n\n"
+        "\t\t\tif ( (pEvent->options == NULL) || (pEvent->options[0] == '\\0') || (!pOperator->GetAttachment( pEvent->options, vecShootOrigin, angDiscard )) )\n"
+        "\t\t\t{\n"
+        "\t\t\t\tvecShootOrigin = pOperator->Weapon_ShootPosition();\n"
+        "\t\t\t}\n\n"
+        "\t\t\tCAI_BaseNPC *npc = pOperator->MyNPCPointer();\n"
+        "\t\t\tASSERT( npc != NULL );\n"
+        "\t\t\tif ( !npc )\n"
+        "\t\t\t\treturn;\n"
+        "\t\t\tvecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );\n"
+        "\t\t\tFireNPCPrimaryAttack( pOperator, vecShootOrigin, vecShootDir );\n"
+        "\t\t}\n"
+        "\t\tbreak;\n"
+        "\t\tdefault:\n"
+        "\t\t\tBaseClass::Operator_HandleAnimEvent( pEvent, pOperator );\n"
+        "\t\t\tbreak;\n"
+        "\t}\n"
+        "}\n"
+        "#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_ar2.h",
+        "#ifndef CLIENT_DLL\n\tDECLARE_ACTTABLE();\n#endif",
+        "#ifndef CLIENT_DLL\n"
+        "\tvoid\tFireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles );\n"
+        "\tvoid\tFireNPCSecondaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles );\n"
+        "\tvoid\tOperator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary );\n"
+        "\tvoid\tOperator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );\n"
+        "\tDECLARE_ACTTABLE();\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_ar2.cpp",
+        "#else\n\t#include \"hl2mp_player.h\"\n\t#include \"te_effect_dispatch.h\"\n\t#include \"prop_combine_ball.h\"\n#endif",
+        "#else\n\t#include \"hl2mp_player.h\"\n\t#include \"te_effect_dispatch.h\"\n\t#include \"prop_combine_ball.h\"\n\t#include \"soundent.h\"\n\t#include \"ai_basenpc.h\"\n\t#include \"npc_combine.h\"\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_ar2.cpp",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_AR2,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_AR2,\t\t\t\tfalse },\n};",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_AR2,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_AR2,\t\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD,\t\t\t\t\t\tACT_RELOAD_SMG1,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE,\t\t\t\t\t\t\tACT_IDLE_SMG1,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_ANGRY,\t\t\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK,\t\t\t\t\t\t\tACT_WALK_RIFLE,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_RELAXED,\t\t\t\t\tACT_IDLE_SMG1_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_STIMULATED,\t\t\t\tACT_IDLE_SMG1_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AGITATED,\t\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_RELAXED,\t\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_STIMULATED,\t\t\t\tACT_WALK_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AGITATED,\t\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_RELAXED,\t\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_STIMULATED,\t\t\t\tACT_RUN_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AGITATED,\t\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_RELAXED,\t\t\t\tACT_IDLE_SMG1_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_STIMULATED,\t\t\tACT_IDLE_AIM_RIFLE_STIMULATED,\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_AGITATED,\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_RELAXED,\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_STIMULATED,\t\t\tACT_WALK_AIM_RIFLE_STIMULATED,\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_AGITATED,\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_RELAXED,\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_STIMULATED,\t\t\tACT_RUN_AIM_RIFLE_STIMULATED,\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_AGITATED,\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM,\t\t\t\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH,\t\t\t\t\tACT_WALK_CROUCH_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH_AIM,\t\t\t\tACT_WALK_CROUCH_AIM_RIFLE,\t\t\ttrue },\n"
+        "\t{ ACT_RUN,\t\t\t\t\t\t\tACT_RUN_RIFLE,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_AIM,\t\t\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH,\t\t\t\t\tACT_RUN_CROUCH_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH_AIM,\t\t\t\tACT_RUN_CROUCH_AIM_RIFLE,\t\t\ttrue },\n"
+        "\t{ ACT_GESTURE_RANGE_ATTACK1,\t\tACT_GESTURE_RANGE_ATTACK_AR2,\t\tfalse },\n"
+        "\t{ ACT_COVER_LOW,\t\t\t\t\tACT_COVER_SMG1_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_AIM_LOW,\t\t\t\tACT_RANGE_AIM_AR2_LOW,\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1_LOW,\t\t\tACT_RANGE_ATTACK_SMG1_LOW,\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD_LOW,\t\t\t\t\tACT_RELOAD_SMG1_LOW,\t\t\t\tfalse },\n"
+        "\t{ ACT_GESTURE_RELOAD,\t\t\t\tACT_GESTURE_RELOAD_SMG1,\t\t\ttrue },\n};",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_ar2.cpp",
+        "\tUTIL_PrecacheOther( \"prop_combine_ball\" );\n\tUTIL_PrecacheOther( \"env_entity_dissolver\" );\n#endif\n\t\n}",
+        "\tUTIL_PrecacheOther( \"prop_combine_ball\" );\n\tUTIL_PrecacheOther( \"env_entity_dissolver\" );\n#endif\n\t\n}\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "void CWeaponAR2::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles )\n"
+        "{\n"
+        "\tVector vecShootOrigin, vecShootDir;\n"
+        "\tCAI_BaseNPC *npc = pOperator->MyNPCPointer();\n"
+        "\tASSERT( npc != NULL );\n"
+        "\tif ( !npc )\n"
+        "\t\treturn;\n\n"
+        "\tif ( bUseWeaponAngles )\n"
+        "\t{\n"
+        "\t\tQAngle angShootDir;\n"
+        '\t\tGetAttachment( LookupAttachment( "muzzle" ), vecShootOrigin, angShootDir );\n'
+        "\t\tAngleVectors( angShootDir, &vecShootDir );\n"
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        "\t\tvecShootOrigin = pOperator->Weapon_ShootPosition();\n"
+        "\t\tvecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );\n"
+        "\t}\n\n"
+        "\tWeaponSoundRealtime( SINGLE_NPC );\n"
+        "\tCSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );\n"
+        "\tpOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );\n"
+        "\tpOperator->DoMuzzleFlash();\n"
+        "\tm_iClip1 = m_iClip1 - 1;\n"
+        "}\n\n"
+        "void CWeaponAR2::FireNPCSecondaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles )\n"
+        "{\n"
+        "\tWeaponSound( WPN_DOUBLE );\n"
+        "\tif ( !GetOwner() )\n"
+        "\t\treturn;\n\n"
+        "\tCAI_BaseNPC *pNPC = GetOwner()->MyNPCPointer();\n"
+        "\tif ( !pNPC )\n"
+        "\t\treturn;\n\n"
+        "\tVector vecSrc, vecAiming;\n"
+        "\tif ( bUseWeaponAngles )\n"
+        "\t{\n"
+        "\t\tQAngle angShootDir;\n"
+        '\t\tGetAttachment( LookupAttachment( "muzzle" ), vecSrc, angShootDir );\n'
+        "\t\tAngleVectors( angShootDir, &vecAiming );\n"
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        "\t\tvecSrc = pNPC->Weapon_ShootPosition();\n"
+        "\t\tVector vecTarget;\n"
+        "\t\tCNPC_Combine *pSoldier = dynamic_cast<CNPC_Combine *>( pNPC );\n"
+        "\t\tif ( pSoldier )\n"
+        "\t\t{\n"
+        "\t\t\tvecTarget = pSoldier->GetAltFireTarget();\n"
+        "\t\t}\n"
+        "\t\telse\n"
+        "\t\t{\n"
+        "\t\t\tif ( !pNPC->GetEnemy() )\n"
+        "\t\t\t\treturn;\n"
+        "\t\t\tvecTarget = pNPC->GetEnemy()->BodyTarget( vecSrc );\n"
+        "\t\t}\n"
+        "\t\tvecAiming = vecTarget - vecSrc;\n"
+        "\t\tVectorNormalize( vecAiming );\n"
+        "\t}\n\n"
+        "\tfloat flDuration = RemapValClamped( 1.0f, 0.0f, 1.0f, 0.5f, sk_weapon_ar2_alt_fire_duration.GetFloat() );\n"
+        "\tfloat flRadius = RemapValClamped( 1.0f, 0.0f, 1.0f, 4.0f, sk_weapon_ar2_alt_fire_radius.GetFloat() );\n"
+        "\tVector vecVelocity = vecAiming * 1000.0f;\n"
+        "\tCreateCombineBall( vecSrc, vecVelocity, flRadius, sk_weapon_ar2_alt_fire_mass.GetFloat(), flDuration, pNPC );\n"
+        "}\n\n"
+        "void CWeaponAR2::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )\n"
+        "{\n"
+        "\tif ( bSecondary )\n"
+        "\t{\n"
+        "\t\tFireNPCSecondaryAttack( pOperator, true );\n"
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        "\t\tm_iClip1++;\n"
+        "\t\tFireNPCPrimaryAttack( pOperator, true );\n"
+        "\t}\n"
+        "}\n\n"
+        "void CWeaponAR2::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )\n"
+        "{\n"
+        "\tswitch ( pEvent->event )\n"
+        "\t{\n"
+        "\t\tcase EVENT_WEAPON_AR2:\n"
+        "\t\t\tFireNPCPrimaryAttack( pOperator, false );\n"
+        "\t\t\tbreak;\n"
+        "\t\tcase EVENT_WEAPON_AR2_ALTFIRE:\n"
+        "\t\t\tFireNPCSecondaryAttack( pOperator, false );\n"
+        "\t\t\tbreak;\n"
+        "\t\tdefault:\n"
+        "\t\t\tCBaseCombatWeapon::Operator_HandleAnimEvent( pEvent, pOperator );\n"
+        "\t\t\tbreak;\n"
+        "\t}\n"
+        "}\n"
+        "#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_shotgun.cpp",
+        "#else\n\t#include \"hl2mp_player.h\"\n#endif",
+        "#else\n\t#include \"hl2mp_player.h\"\n\t#include \"soundent.h\"\n\t#include \"ai_basenpc.h\"\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_shotgun.cpp",
+        "#ifndef CLIENT_DLL\n\tDECLARE_ACTTABLE();\n#endif\n\n\tCWeaponShotgun(void);",
+        "#ifndef CLIENT_DLL\n"
+        "\tvoid\tFireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles );\n"
+        "\tvoid\tOperator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary );\n"
+        "\tvoid\tOperator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );\n"
+        "\tDECLARE_ACTTABLE();\n#endif\n\n\tCWeaponShotgun(void);",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_shotgun.cpp",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_SHOTGUN,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_SHOTGUN,\t\t\t\tfalse },\n};",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_SHOTGUN,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE,\t\t\t\t\t\t\tACT_IDLE_SMG1,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_SHOTGUN,\t\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD,\t\t\t\t\t\tACT_RELOAD_SHOTGUN,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK,\t\t\t\t\t\t\tACT_WALK_RIFLE,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_ANGRY,\t\t\t\t\tACT_IDLE_ANGRY_SHOTGUN,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_RELAXED,\t\t\t\t\tACT_IDLE_SHOTGUN_RELAXED,\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_STIMULATED,\t\t\t\tACT_IDLE_SHOTGUN_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AGITATED,\t\t\t\tACT_IDLE_SHOTGUN_AGITATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_RELAXED,\t\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_STIMULATED,\t\t\t\tACT_WALK_RIFLE_STIMULATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AGITATED,\t\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_RELAXED,\t\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_STIMULATED,\t\t\t\tACT_RUN_RIFLE_STIMULATED,\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AGITATED,\t\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_RELAXED,\t\t\t\tACT_IDLE_SMG1_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_STIMULATED,\t\t\tACT_IDLE_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_IDLE_AIM_AGITATED,\t\t\tACT_IDLE_ANGRY_SMG1,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_RELAXED,\t\t\t\tACT_WALK_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_STIMULATED,\t\t\tACT_WALK_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM_AGITATED,\t\t\tACT_WALK_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_RELAXED,\t\t\t\tACT_RUN_RIFLE_RELAXED,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_STIMULATED,\t\t\tACT_RUN_AIM_RIFLE_STIMULATED,\t\t\tfalse },\n"
+        "\t{ ACT_RUN_AIM_AGITATED,\t\t\t\tACT_RUN_AIM_RIFLE,\t\t\t\t\t\tfalse },\n"
+        "\t{ ACT_WALK_AIM,\t\t\t\t\t\tACT_WALK_AIM_SHOTGUN,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH,\t\t\t\t\tACT_WALK_CROUCH_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH_AIM,\t\t\t\tACT_WALK_CROUCH_AIM_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN,\t\t\t\t\t\t\tACT_RUN_RIFLE,\t\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_AIM,\t\t\t\t\t\tACT_RUN_AIM_SHOTGUN,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH,\t\t\t\t\tACT_RUN_CROUCH_RIFLE,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH_AIM,\t\t\t\tACT_RUN_CROUCH_AIM_RIFLE,\t\t\t\ttrue },\n"
+        "\t{ ACT_GESTURE_RANGE_ATTACK1,\t\tACT_GESTURE_RANGE_ATTACK_SHOTGUN,\t\ttrue },\n"
+        "\t{ ACT_RANGE_ATTACK1_LOW,\t\t\tACT_RANGE_ATTACK_SHOTGUN_LOW,\t\t\ttrue },\n"
+        "\t{ ACT_RELOAD_LOW,\t\t\t\t\tACT_RELOAD_SHOTGUN_LOW,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_GESTURE_RELOAD,\t\t\t\tACT_GESTURE_RELOAD_SHOTGUN,\t\t\t\tfalse },\n};",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_shotgun.cpp",
+        "\tm_fMinRange1\t\t= 0.0;\n\tm_fMaxRange1\t\t= 500;\n\tm_fMinRange2\t\t= 0.0;\n\tm_fMaxRange2\t\t= 200;\n}",
+        "\tm_fMinRange1\t\t= 0.0;\n\tm_fMaxRange1\t\t= 500;\n\tm_fMinRange2\t\t= 0.0;\n\tm_fMaxRange2\t\t= 200;\n}\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "void CWeaponShotgun::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles )\n"
+        "{\n"
+        "\tVector vecShootOrigin, vecShootDir;\n"
+        "\tCAI_BaseNPC *npc = pOperator->MyNPCPointer();\n"
+        "\tASSERT( npc != NULL );\n"
+        "\tif ( !npc )\n"
+        "\t\treturn;\n\n"
+        "\tWeaponSound( SINGLE_NPC );\n"
+        "\tCSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );\n"
+        "\tpOperator->DoMuzzleFlash();\n"
+        "\tm_iClip1 = m_iClip1 - 1;\n\n"
+        "\tif ( bUseWeaponAngles )\n"
+        "\t{\n"
+        "\t\tQAngle angShootDir;\n"
+        '\t\tGetAttachment( LookupAttachment( "muzzle" ), vecShootOrigin, angShootDir );\n'
+        "\t\tAngleVectors( angShootDir, &vecShootDir );\n"
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        "\t\tvecShootOrigin = pOperator->Weapon_ShootPosition();\n"
+        "\t\tvecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );\n"
+        "\t}\n\n"
+        "\tpOperator->FireBullets( 8, vecShootOrigin, vecShootDir, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 0 );\n"
+        "}\n\n"
+        "void CWeaponShotgun::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )\n"
+        "{\n"
+        "\tm_iClip1++;\n"
+        "\tFireNPCPrimaryAttack( pOperator, true );\n"
+        "}\n\n"
+        "void CWeaponShotgun::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )\n"
+        "{\n"
+        "\tswitch ( pEvent->event )\n"
+        "\t{\n"
+        "\t\tcase EVENT_WEAPON_SHOTGUN_FIRE:\n"
+        "\t\t\tFireNPCPrimaryAttack( pOperator, false );\n"
+        "\t\t\tbreak;\n"
+        "\t\tdefault:\n"
+        "\t\t\tCBaseCombatWeapon::Operator_HandleAnimEvent( pEvent, pOperator );\n"
+        "\t\t\tbreak;\n"
+        "\t}\n"
+        "}\n"
+        "#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_rpg.h",
+        "#ifndef CLIENT_DLL\n\tDECLARE_ACTTABLE();\n#endif",
+        "#ifndef CLIENT_DLL\n"
+        "\tvoid\tOperator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );\n"
+        "\tDECLARE_ACTTABLE();\n#endif",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_rpg.cpp",
+        '\t#include "collisionutils.h"\n\t#include "hl2_shareddefs.h"\n#endif',
+        '\t#include "collisionutils.h"\n\t#include "hl2_shareddefs.h"\n\t#include "ai_basenpc.h"\n#endif',
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_rpg.cpp",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_RPG,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_RPG,\t\t\t\tfalse },\n};",
+        "\t{ ACT_HL2MP_JUMP,\t\t\t\t\tACT_HL2MP_JUMP_RPG,\t\t\t\t\tfalse },\n"
+        "\t{ ACT_RANGE_ATTACK1,\t\t\t\tACT_RANGE_ATTACK_RPG,\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_RELAXED,\t\t\t\t\tACT_IDLE_RPG_RELAXED,\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_STIMULATED,\t\t\t\tACT_IDLE_ANGRY_RPG,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_AGITATED,\t\t\t\tACT_IDLE_ANGRY_RPG,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE,\t\t\t\t\t\t\tACT_IDLE_RPG,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_IDLE_ANGRY,\t\t\t\t\tACT_IDLE_ANGRY_RPG,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK,\t\t\t\t\t\t\tACT_WALK_RPG,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_WALK_CROUCH,\t\t\t\t\tACT_WALK_CROUCH_RPG,\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN,\t\t\t\t\t\t\tACT_RUN_RPG,\t\t\t\t\t\ttrue },\n"
+        "\t{ ACT_RUN_CROUCH,\t\t\t\t\tACT_RUN_CROUCH_RPG,\t\t\t\t\ttrue },\n"
+        "\t{ ACT_COVER_LOW,\t\t\t\t\tACT_COVER_LOW_RPG,\t\t\t\t\ttrue },\n};",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/weapon_rpg.cpp",
+        "#ifndef CLIENT_DLL\n\tUTIL_PrecacheOther( \"rpg_missile\" );\n#endif\n\n}",
+        "#ifndef CLIENT_DLL\n\tUTIL_PrecacheOther( \"rpg_missile\" );\n#endif\n\n}\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "void CWeaponRPG::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )\n"
+        "{\n"
+        "\tswitch ( pEvent->event )\n"
+        "\t{\n"
+        "\t\tcase EVENT_WEAPON_SMG1:\n"
+        "\t\t{\n"
+        "\t\t\tif ( m_hMissile != NULL )\n"
+        "\t\t\t\treturn;\n\n"
+        "\t\t\tCAI_BaseNPC *npc = pOperator->MyNPCPointer();\n"
+        "\t\t\tASSERT( npc != NULL );\n"
+        "\t\t\tif ( !npc )\n"
+        "\t\t\t\treturn;\n\n"
+        "\t\t\tVector muzzlePoint = GetOwner()->Weapon_ShootPosition();\n"
+        "\t\t\tVector vecShootDir = npc->GetActualShootTrajectory( muzzlePoint );\n\n"
+        "\t\t\tVector altLaunchPoint;\n"
+        '\t\t\tif ( GetAttachment( "missile", altLaunchPoint ) )\n'
+        "\t\t\t{\n"
+        "\t\t\t\ttrace_t tr;\n"
+        "\t\t\t\tAI_TraceHull( altLaunchPoint, altLaunchPoint + vecShootDir * (10.0f * 12.0f), Vector( -24, -24, -24 ), Vector( 24, 24, 24 ), MASK_NPCSOLID, NULL, &tr );\n"
+        "\t\t\t\tif ( tr.fraction == 1.0 )\n"
+        "\t\t\t\t{\n"
+        "\t\t\t\t\tmuzzlePoint = altLaunchPoint;\n"
+        "\t\t\t\t}\n"
+        "\t\t\t}\n\n"
+        "\t\t\tQAngle vecAngles;\n"
+        "\t\t\tVectorAngles( vecShootDir, vecAngles );\n\n"
+        "\t\t\tm_hMissile = CMissile::Create( muzzlePoint, vecAngles, GetOwner()->edict() );\n"
+        "\t\t\tm_hMissile->m_hOwner = this;\n"
+        "\t\t\tm_hMissile->SetGracePeriod( 0.5 );\n\n"
+        "\t\t\tpOperator->DoMuzzleFlash();\n"
+        "\t\t\tWeaponSound( SINGLE_NPC );\n"
+        "\t\t\tm_bGuiding = false;\n"
+        "\t\t\tif ( m_hLaserDot )\n"
+        "\t\t\t{\n"
+        "\t\t\t\tm_hLaserDot->TurnOff();\n"
+        "\t\t\t}\n"
+        "\t\t}\n"
+        "\t\tbreak;\n"
+        "\t\tdefault:\n"
+        "\t\t\tBaseClass::Operator_HandleAnimEvent( pEvent, pOperator );\n"
+        "\t\t\tbreak;\n"
+        "\t}\n"
+        "}\n"
+        "#endif",
     )
 
 
