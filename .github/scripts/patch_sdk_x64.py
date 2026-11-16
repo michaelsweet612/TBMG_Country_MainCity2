@@ -1167,6 +1167,207 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
         "#endif",
     )
 
+    # ------------------------------------------------------------------
+    # 9. Fix player footsteps (remove Combine gear clanks on non-Combine
+    #    playermodels and use standard HL2 surface footsteps), default to
+    #    Rebel Citizen model instead of Combine Soldier, disable sv_autosave,
+    #    and harden CHL2MP_Player::OnRestore.
+    # ------------------------------------------------------------------
+    replace_once(
+        src / "game/client/hl2mp/c_hl2mp_player.cpp",
+        'static ConVar cl_playermodel( "cl_playermodel", "none", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_SERVER_CAN_EXECUTE, "Default Player Model");',
+        'static ConVar cl_playermodel( "cl_playermodel", "models/humans/group03/male_07.mdl", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_SERVER_CAN_EXECUTE, "Default Player Model");',
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.h",
+        "\tvirtual void Precache( void );\n\tvirtual void Spawn( void );",
+        "\tvirtual void Precache( void );\n\tvirtual void OnRestore( void );\n\tvirtual void Spawn( void );",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        "\tm_iSpawnInterpCounter = 0;\n\n    m_bEnterObserver = false;\n\tm_bReady = false;",
+        "\tm_iSpawnInterpCounter = 0;\n"
+        "\tm_iModelType = TEAM_REBELS;\n"
+        "\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_CITIZEN;\n\n"
+        "    m_bEnterObserver = false;\n\tm_bReady = false;",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        '\t\t\t\tif ( ValidatePlayerModel( szModelName ) == false )\n'
+        "\t\t\t\t{\n"
+        "\t\t\t\t\tchar szReturnString[512];\n\n"
+        '\t\t\t\t\tQ_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel models/combine_soldier.mdl\\n" );\n'
+        "\t\t\t\t\tengine->ClientCommand ( edict(), szReturnString );\n"
+        "\t\t\t\t}",
+        '\t\t\t\tif ( ValidatePlayerModel( szModelName ) == false )\n'
+        "\t\t\t\t{\n"
+        "\t\t\t\t\tchar szReturnString[512];\n\n"
+        '\t\t\t\t\tQ_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel models/humans/group03/male_07.mdl\\n" );\n'
+        "\t\t\t\t\tengine->ClientCommand ( edict(), szReturnString );\n"
+        "\t\t\t\t}",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        '\tif ( modelIndex == -1 || ValidatePlayerModel( szModelName ) == false )\n'
+        "\t{\n"
+        '\t\tszModelName = "models/Combine_Soldier.mdl";\n'
+        "\t\tm_iModelType = TEAM_COMBINE;\n",
+        '\tif ( modelIndex == -1 || ValidatePlayerModel( szModelName ) == false )\n'
+        "\t{\n"
+        '\t\tszModelName = "models/humans/group03/male_07.mdl";\n'
+        "\t\tm_iModelType = TEAM_REBELS;\n",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        "\t\tif ( ValidatePlayerModel( pszCurrentModelName ) == false )\n"
+        "\t\t{\n"
+        '\t\t\tpszCurrentModelName = "models/Combine_Soldier.mdl";\n'
+        "\t\t}",
+        "\t\tif ( ValidatePlayerModel( pszCurrentModelName ) == false )\n"
+        "\t\t{\n"
+        '\t\t\tpszCurrentModelName = "models/humans/group03/male_07.mdl";\n'
+        "\t\t}",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        '\t\tif ( Q_stristr( szModelName, "models/human") )\n'
+        "\t\t{\n"
+        "\t\t\tm_iModelType = TEAM_REBELS;\n"
+        "\t\t}\n"
+        "\t\telse\n"
+        "\t\t{\n"
+        "\t\t\tm_iModelType = TEAM_COMBINE;\n"
+        "\t\t}\n"
+        "\t}\n\n"
+        "\tint modelIndex = modelinfo->GetModelIndex( szModelName );\n\n"
+        "\tif ( modelIndex == -1 )\n"
+        "\t{\n"
+        '\t\tszModelName = "models/Combine_Soldier.mdl";\n'
+        "\t\tm_iModelType = TEAM_COMBINE;",
+        '\t\tif ( Q_stristr( szModelName, "combine") || Q_stristr( szModelName, "police") )\n'
+        "\t\t{\n"
+        "\t\t\tm_iModelType = TEAM_COMBINE;\n"
+        "\t\t}\n"
+        "\t\telse\n"
+        "\t\t{\n"
+        "\t\t\tm_iModelType = TEAM_REBELS;\n"
+        "\t\t}\n"
+        "\t}\n\n"
+        "\tint modelIndex = modelinfo->GetModelIndex( szModelName );\n\n"
+        "\tif ( modelIndex == -1 )\n"
+        "\t{\n"
+        '\t\tszModelName = "models/humans/group03/male_07.mdl";\n'
+        "\t\tm_iModelType = TEAM_REBELS;",
+    )
+
+    replace_once(
+        src / "game/server/hl2mp/hl2mp_player.cpp",
+        "void CHL2MP_Player::SetupPlayerSoundsByModel( const char *pModelName )\n"
+        "{\n"
+        '\tif ( Q_stristr( pModelName, "models/human") )\n'
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_CITIZEN;\n"
+        "\t}\n"
+        '\telse if ( Q_stristr(pModelName, "police" ) )\n'
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_METROPOLICE;\n"
+        "\t}\n"
+        '\telse if ( Q_stristr(pModelName, "combine" ) )\n'
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_COMBINESOLDIER;\n"
+        "\t}\n"
+        "}",
+        "void CHL2MP_Player::OnRestore( void )\n"
+        "{\n"
+        "\tBaseClass::OnRestore();\n"
+        "\tconst char *pszModel = STRING( GetModelName() );\n"
+        '\tif ( !pszModel || !pszModel[0] || !ValidatePlayerModel( pszModel ) )\n'
+        "\t{\n"
+        '\t\tSetModel( "models/humans/group03/male_07.mdl" );\n'
+        "\t\tpszModel = STRING( GetModelName() );\n"
+        "\t}\n"
+        "\tSetupPlayerSoundsByModel( pszModel );\n"
+        '\tm_iModelType = ( m_iPlayerSoundType == (int)PLAYER_SOUNDS_CITIZEN ) ? TEAM_REBELS : TEAM_COMBINE;\n'
+        "}\n\n"
+        "void CHL2MP_Player::SetupPlayerSoundsByModel( const char *pModelName )\n"
+        "{\n"
+        '\tif ( pModelName && Q_stristr( pModelName, "police" ) )\n'
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_METROPOLICE;\n"
+        "\t}\n"
+        '\telse if ( pModelName && Q_stristr( pModelName, "combine" ) )\n'
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_COMBINESOLDIER;\n"
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        "\t\tm_iPlayerSoundType = (int)PLAYER_SOUNDS_CITIZEN;\n"
+        "\t}\n"
+        "}",
+    )
+
+    replace_once(
+        src / "game/shared/hl2mp/hl2mp_player_shared.cpp",
+        "void CHL2MP_Player::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )\n"
+        "{\n"
+        "\tif ( gpGlobals->maxClients > 1 && !sv_footsteps.GetFloat() )\n"
+        "\t\treturn;\n\n"
+        "#if defined( CLIENT_DLL )\n"
+        "\t// during prediction play footstep sounds only once\n"
+        "\tif ( !prediction->IsFirstTimePredicted() )\n"
+        "\t\treturn;\n"
+        "#endif\n\n"
+        "\tif ( GetFlags() & FL_DUCKING )\n"
+        "\t\treturn;\n\n"
+        "\tm_Local.m_nStepside = !m_Local.m_nStepside;\n\n"
+        "\tchar szStepSound[128];\n\n"
+        "\tif ( m_Local.m_nStepside )\n"
+        "\t{\n"
+        '\t\tQ_snprintf( szStepSound, sizeof( szStepSound ), "%s.RunFootstepLeft", g_ppszPlayerSoundPrefixNames[m_iPlayerSoundType] );\n'
+        "\t}\n"
+        "\telse\n"
+        "\t{\n"
+        '\t\tQ_snprintf( szStepSound, sizeof( szStepSound ), "%s.RunFootstepRight", g_ppszPlayerSoundPrefixNames[m_iPlayerSoundType] );\n'
+        "\t}\n\n"
+        "\tCSoundParameters params;\n"
+        "\tif ( GetParametersForSound( szStepSound, params, NULL ) == false )\n"
+        "\t\treturn;\n\n"
+        "\tCRecipientFilter filter;\n"
+        "\tfilter.AddRecipientsByPAS( vecOrigin );\n\n"
+        "#ifndef CLIENT_DLL\n"
+        "\t// im MP, server removed all players in origins PVS, these players \n"
+        "\t// generate the footsteps clientside\n"
+        "\tif ( gpGlobals->maxClients > 1 )\n"
+        "\t\tfilter.RemoveRecipientsByPVS( vecOrigin );\n"
+        "#endif\n\n"
+        "\tEmitSound_t ep;\n"
+        "\tep.m_nChannel = CHAN_BODY;\n"
+        "\tep.m_pSoundName = params.soundname;\n"
+        "\tep.m_flVolume = fvol;\n"
+        "\tep.m_SoundLevel = params.soundlevel;\n"
+        "\tep.m_nFlags = 0;\n"
+        "\tep.m_nPitch = params.pitch;\n"
+        "\tep.m_pOrigin = &vecOrigin;\n\n"
+        "\tEmitSound( filter, entindex(), ep );\n"
+        "}",
+        "void CHL2MP_Player::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )\n"
+        "{\n"
+        "\tBaseClass::PlayStepSound( vecOrigin, psurface, fvol, force );\n"
+        "}",
+    )
+
+    replace_once(
+        src / "game/server/gameinterface.cpp",
+        'ConVar sv_autosave( "sv_autosave", "1", 0, "Set to 1 to autosave game on level transition. Does not affect autosave triggers." );',
+        'ConVar sv_autosave( "sv_autosave", "0", 0, "Set to 1 to autosave game on level transition. Does not affect autosave triggers." );',
+    )
+
 
 def main() -> None:
     if len(sys.argv) != 2:

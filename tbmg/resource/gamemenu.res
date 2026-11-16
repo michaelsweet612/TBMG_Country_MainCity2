@@ -36,29 +36,21 @@
 	}
 	"6"
 	{
-		"label" "#GameUI_GameMenu_LoadGame"
-		"command" "OpenLoadGameDialog"
-		"InGameOrder" "45"
-		"notmulti" "1"
-	}
-	"7"
-	{
-		"label" "#GameUI_GameMenu_SaveGame"
-		"command" "OpenSaveGameDialog"
+		"label" "LEAVE MAP (MAIN MENU)"
+		"command" "DisconnectNoConfirm"
 		"InGameOrder" "50"
-		"notmulti" "1"
 		"OnlyInGame" "1"
 	}
-	"8"
+	"7"
 	{
 		"label" "#GameUI_GameMenu_Options"
 		"command" "OpenOptionsDialog"
 		"InGameOrder" "55"
 	}
-	"9"
+	"8"
 	{
 		"label" "#GameUI_GameMenu_Quit"
-		"command" "Quit"
+		"command" "QuitNoConfirm"
 		"InGameOrder" "60"
 	}
 }

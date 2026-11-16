@@ -1,6 +1,6 @@
 # TBMG: Country & MainCity2 — Standalone 64-Bit Source Engine Edition
 
-**TBMG: Country & MainCity2** (`v2.2.0`) is a standalone **64-bit Source Engine** game built directly on **Source SDK Base 2013 Multiplayer** (`AppID 243750`). It runs in its own self-contained mod directory (`tbmg/`) with zero Garry's Mod dependency and zero legacy Python/WebGL wrappers.
+**TBMG: Country & MainCity2** (`v2.3.0`) is a standalone **64-bit Source Engine** game built directly on **Source SDK Base 2013 Multiplayer** (`AppID 243750`). It runs in its own self-contained mod directory (`tbmg/`) — **neither Half-Life 2 nor Garry's Mod is required**.
 
 ---
 
@@ -10,6 +10,7 @@
 - [Quick Start & Installation](#quick-start--installation)
 - [Maps & Play Game Selector](#maps--play-game-selector)
 - [Natural Spawning Settings](#natural-spawning-settings)
+- [What's New in v2.3.0](#whats-new-in-v230)
 - [What's New in v2.2.0](#whats-new-in-v220)
 - [Core Gameplay Features](#core-gameplay-features)
 - [Controls, Tactical Binds & Console Commands](#controls-tactical-binds--console-commands)
@@ -23,7 +24,7 @@
 
 - **OS**: Windows (64-bit recommended for `hl2_win64.exe` and `tbmg/bin/x64/`; 32-bit fallback binaries remain in `tbmg/bin/`).
 - **Steam + Source SDK Base 2013 Multiplayer**: Free under **Steam → Library → Tools** (`AppID 243750`). Steam must be running when launching the game.
-- **No Garry's Mod Required**: All game logic, UI, maps, sounds, and materials load standalone through Source SDK Base 2013 Multiplayer.
+- **No Half-Life 2 or Garry's Mod Required**: You do **not** need to own or install Half-Life 2 or Garry's Mod. Everything needed is bundled in `tbmg/` and `source_engine/` on top of the free Source SDK Base 2013 Multiplayer runtime.
 
 ---
 
@@ -31,8 +32,8 @@
 
 ### Option A — Standalone Release Download (Recommended)
 
-1. Install and launch **Steam**, and install **Source SDK Base 2013 Multiplayer** (`AppID 243750` from Steam Tools).
-2. Download **`TBMG_Standalone_Source2013_v2.2.0.zip`** from the [Releases](https://github.com/michaelsweet612/TBMG_Country_Game_HL2/releases) page and extract the entire folder.
+1. Install and launch **Steam**, and install the free **Source SDK Base 2013 Multiplayer** (`AppID 243750` from **Steam → Library → Tools**).
+2. Download **`TBMG_Standalone_Source2013_v2.3.0.zip`** from the [Releases](https://github.com/michaelsweet612/TBMG_Country_Game_HL2/releases) page and extract the entire folder.
 3. Double-click **`Play_TBMG.bat`** (or **`Play_TBMG (Needs Steam).bat`**).
    - The launcher automatically detects **Source SDK Base 2013 Multiplayer** across standard Steam library drives and the Windows Registry, prefers `hl2_win64.exe` (falling back to `hl2.exe` if unavailable), and opens `steam://install/243750` if you prompt it to install the SDK.
 4. On the **Main Menu**, click **PLAY GAME** to open the **Select Map** window and pick your map.
@@ -58,10 +59,10 @@ Instead of dropping straight into a map on launch, **TBMG** boots cleanly to the
 
 | Menu Title | Map File | Description |
 | :--- | :--- | :--- |
-| **`MainCity2 (Big City)`** | `gm_bigcity_improved` | Large open urban sandbox city with streets, skyscrapers, highway, parked Scout Buggies, active Combine/Resistance patrols, rebuilt AI node graph (`1,400` nodes), calibrated HDR lighting (`sky_day01_04`), and custom city soundscapes. |
+| **`MainCity2 (Big City)`** | `gm_bigcity_improved` | Large open urban sandbox city featuring a clear central spawn plaza (ammo outside the South wall), active West Civilians/Rebels vs East Metrocops gunbattles, Combine Soldiers roaming the Power Plant, full Half-Life 2 NPC cast, parked Scout Buggies, rebuilt AI node graph (`1,500` AI nodes), calibrated HDR lighting (`sky_day01_04`), and custom city soundscapes. |
 | **`Flatgrass`** | `gm_flatgrass` | Open green flatgrass plain with central concrete structure and prebuilt AI node graph (`gm_flatgrass.ain`). |
 
-> **Additional Bundled Map Variant:** `gm_bigcity_improved_rp` (`source_engine/maps/gm_bigcity_improved_rp.bsp`, paired with `.nav` and `.ain`) is also included and can be loaded anytime via the developer console (`~`) with `map gm_bigcity_improved_rp`. The editable Hammer source `MainCity2.vmf` is included under `source_engine/maps/`.
+> **Additional Bundled Map Variant:** `gm_bigcity_improved_rp` (`source_engine/maps/gm_bigcity_improved_rp.bsp`, paired with `.nav` and refreshed `source_engine/maps/graphs/gm_bigcity_improved_rp.ain`) is also included and trimmed under Source's `8,192` brush limit (`8,080` brushes) so it loads cleanly via developer console (`~`) with `map gm_bigcity_improved_rp`. The editable Hammer source `MainCity2.vmf` is included under `source_engine/maps/`.
 
 ---
 
@@ -77,8 +78,8 @@ You can toggle dynamic NPC world population directly in the in-game settings men
 ### How It Works
 
 - **Node-Based Placement**: Uses verified `NODE_GROUND` AI `info_node` points in the map's AI node graph (`g_pBigAINet`, excluding fallen or hull-blocked nodes and preferring linked graph nodes) between **`500` and `3400` units** from active players and at least **`220` units** apart from other naturally spawned NPCs.
-- **Collision & Clearance Checks**: Performs padded `UTIL_TraceHull` (`MASK_NPCSOLID`) ground-snapping and post-spawn clearance verification so spawned NPCs do not clip into geometry or block corridors, and automatically cleans up tracked NPCs that fall too far out of range (`> 4800` units).
-- **Zero Ammo Spawning**: Spawns only mobile Half-Life 2 NPCs (`npc_citizen`, `npc_metropolice`, `npc_combine_s`, `npc_vortigaunt`, `npc_zombie`, and airborne `npc_manhack`). It **never** spawns `item_ammo_*`, `item_box_*`, or `item_item_crate` entities so ammo props never wedge into walls or block walkways.
+- **Collision & Clearance Checks**: Performs padded `UTIL_TraceHull` (`MASK_NPCSOLID`) ground-snapping and post-spawn clearance verification so spawned NPCs do not clip into geometry or block walkways, and automatically cleans up tracked NPCs that fall too far out of range (`> 4800` units).
+- **Zero Ammo Spawning & Full HL2 Cast**: Spawns sector-aware mobile Half-Life 2 NPCs (`npc_citizen`, `npc_metropolice`, `npc_combine_s`, `npc_vortigaunt`, `npc_zombie`, `npc_fastzombie`, `npc_poisonzombie`, `npc_headcrab`, `npc_headcrab_fast`, `npc_headcrab_black`, `npc_antlion`, `npc_manhack`, `npc_cscanner`, `npc_clawscanner`, and `npc_monk` with `weapon_shotgun`) without ever spawning `item_ammo_*`, `item_box_*`, or `item_item_crate` entities inside walls.
 
 ### Natural Spawning Console Variables & Commands
 
@@ -89,6 +90,22 @@ You can toggle dynamic NPC world population directly in the in-game settings men
 | `tbmg_natural_spawn_max` | `14` | Maximum concurrent naturally spawned NPCs allowed alive at once (with entity budget safety cap). |
 | `tbmg_natural_spawn_status` | *(command)* | Prints current node counts, linked candidate count, active tracked NPC count, total spawned, and current entity count. |
 | `tbmg_natural_spawn_clear` | *(command)* | Immediately removes all currently tracked naturally spawned NPCs. |
+
+---
+
+## What's New in v2.3.0
+
+- **Full Half-Life 2 NPC Cast & Working NPC Gunfire**:
+  - Compiled `npc_fastzombie.cpp` and `weapon_alyxgun.cpp` into 64-bit `server.dll`, and restored server-side NPC acttables and animation fire handlers (`Operator_HandleAnimEvent` / `FireNPCPrimaryAttack`) in `weapon_smg1.cpp`, `weapon_ar2.cpp`, `weapon_shotgun.cpp`, and `weapon_rpg.cpp` so NPCs fire weapons cleanly without missing-event warnings.
+  - Forced Father Grigori (`npc_monk`) to **always** spawn armed with `weapon_shotgun`.
+- **Territorial BigCity Battles & Clean Spawn Zone (`gm_bigcity_improved` / `gm_bigcity_improved_rp`)**:
+  - Cleared the immediate player spawn plaza and relocated ammo crates outside the South wall away from map geometry.
+  - Spread NPCs cleanly across zones for continuous combat: West Civilians/Rebels battling East Metrocops, Combine Soldiers roaming the Power Plant, plus Alyx, Barney, Dog, Father Grigori, Vortigaunts, Zombies (`zombie`, `fastzombie`, `poisonzombie`), Headcrabs, Antlions, Antlion Guard, Scanners, Manhacks, Rollermines, Floor Turrets, and birds.
+  - Compacted `gm_bigcity_improved_rp.bsp` from `9,076` brushes down to `8,080` (within Source SDK 2013 MP's `8,192` brush cap) and updated `source_engine/maps/graphs/gm_bigcity_improved_rp.ain` so the RP map loads without `"Map has too many brushes"` errors.
+- **No Save-on-Leave Prompts & Map-Owned NPCs**:
+  - Removed singleplayer **Save Game** / **Load Game** menu buttons (`tbmg/resource/gamemenu.res`) and `bind "F9" "load quick"` (`tbmg/cfg/config.cfg`), added **LEAVE MAP (MAIN MENU)** (`DisconnectNoConfirm`), switched **Quit** to `QuitNoConfirm`, disabled `sv_autosave` (`0` default) and set `save_disable 1` (`tbmg/cfg/autoexec.cfg`), and added `CHL2MP_Player::OnRestore()` so leaving never saves or corrupts map NPCs.
+- **Standard Surface Footsteps & Rebel Player Default**:
+  - Delegated `CHL2MP_Player::PlayStepSound` to `BaseClass::PlayStepSound` (`player/footsteps/*.wav` surface steps instead of Combine soldier gear clanks) and changed default `cl_playermodel` / team fallback from `models/combine_soldier.mdl` to `models/humans/group03/male_07.mdl` (`TEAM_REBELS`).
 
 ---
 
@@ -116,7 +133,7 @@ You can toggle dynamic NPC world population directly in the in-game settings men
 
 - **Full HEV Suit & Arsenal on Spawn**: Equips the HEV Suit (Health/Suit/Ammo HUD, Sprint, Flashlight, Suit Zoom) and Half-Life 2 arsenal (`Gravity Gun`, `Crowbar`, `USP Pistol`, `.357 Magnum`, `MP7 SMG1`, `AR2 Pulse Rifle`, `SPAS-12 Shotgun`, `Crossbow`, `RPG`, `Frag Grenades`, `Bugbait`).
 - **Drivable Vehicles**: Drivable HL2 Scout Buggies (`ch_createjeep` / `F6`) parked in MainCity2 or spawned on demand, plus Airboats (`ch_createairboat` / `F7`).
-- **Main Menu Quick Shortcuts (`tbmg/resource/gamemenu.res`)**: When paused in-game, you can jump straight to **SPAWN SCOUT BUGGY (IN-GAME)**, **FULL ARSENAL & HEV SUIT**, **DEVELOPER CONSOLE (~)**, Save/Load, or **Options**.
+- **Main Menu Quick Shortcuts (`tbmg/resource/gamemenu.res`)**: When paused in-game, you can jump straight to **SPAWN SCOUT BUGGY (IN-GAME)**, **FULL ARSENAL & HEV SUIT**, **DEVELOPER CONSOLE (~)**, **LEAVE MAP (MAIN MENU)**, **Options**, or **Quit** (without save-on-leave prompts).
 
 ---
 
@@ -153,9 +170,8 @@ You can toggle dynamic NPC world population directly in the in-game settings men
 | **`F6`** | Spawn Drivable Scout Buggy | `spawn_jeep` (`ch_createjeep`) |
 | **`F7`** | Spawn Drivable Airboat | `spawn_airboat` (`ch_createairboat`) |
 | **`F8`** | Toggle Invincibility (Godmode) | `god` |
-| **`F9`** | Quick Load | `load quick` |
 
-Additional console aliases: `spawn_zombie` (`npc_create npc_zombie`).
+Additional console aliases: `spawn_monk` (Shotgun), `spawn_alyx`, `spawn_barney`, `spawn_vort`, `spawn_dog`, `spawn_zombie`, `spawn_fastzombie`, and `spawn_antlion`.
 
 ---
 
