@@ -64,25 +64,6 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
         '\t\t\t$File\t"hl2\\weapon_annabelle.cpp"',
     )
 
-    server_vcxproj = src / "game/server/server_win64_hl2mp.vcxproj"
-    if server_vcxproj.is_file():
-        replace_once(
-            server_vcxproj,
-            '    <ClCompile Include="hl2\\npc_enemyfinder.cpp" />\n'
-            '    <ClCompile Include="hl2\\npc_fisherman.cpp" />',
-            '    <ClCompile Include="hl2\\npc_enemyfinder.cpp" />\n'
-            '    <ClCompile Include="hl2\\npc_fastzombie.cpp" />\n'
-            '    <ClCompile Include="hl2\\npc_fisherman.cpp" />',
-        )
-        replace_once(
-            server_vcxproj,
-            '    <ClCompile Include="hl2\\vehicle_viewcontroller.cpp" />\n'
-            '    <ClCompile Include="hl2\\weapon_annabelle.cpp" />',
-            '    <ClCompile Include="hl2\\vehicle_viewcontroller.cpp" />\n'
-            '    <ClCompile Include="hl2\\weapon_alyxgun.cpp" />\n'
-            '    <ClCompile Include="hl2\\weapon_annabelle.cpp" />',
-        )
-
     # 2. Expose canonical HL2 AI faction relationships & class names to HL2MP gamerules.
     replace_once(
         src / "game/shared/hl2/hl2_gamerules.h",
@@ -1163,8 +1144,12 @@ def patch_sdk(sdk_root: pathlib.Path) -> None:
         "\t\t\tQAngle vecAngles;\n"
         "\t\t\tVectorAngles( vecShootDir, vecAngles );\n\n"
         "\t\t\tm_hMissile = CMissile::Create( muzzlePoint, vecAngles, GetOwner()->edict() );\n"
-        "\t\t\tm_hMissile->m_hOwner = this;\n"
-        "\t\t\tm_hMissile->SetGracePeriod( 0.5 );\n\n"
+        "\t\t\tCMissile *pMissile = static_cast<CMissile *>( m_hMissile.Get() );\n"
+        "\t\t\tif ( pMissile )\n"
+        "\t\t\t{\n"
+        "\t\t\t\tpMissile->m_hOwner = this;\n"
+        "\t\t\t\tpMissile->SetGracePeriod( 0.5 );\n"
+        "\t\t\t}\n\n"
         "\t\t\tpOperator->DoMuzzleFlash();\n"
         "\t\t\tWeaponSound( SINGLE_NPC );\n"
         "\t\t\tm_bGuiding = false;\n"
